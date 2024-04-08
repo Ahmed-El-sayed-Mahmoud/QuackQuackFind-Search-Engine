@@ -1,0 +1,225 @@
+package com.example.demo;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.*;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class Crawler {
+    private Set<String> crawledURLS = new HashSet<String>();
+    private HashMap<String, HashSet<String>> robotsDisallow = new HashMap<>();
+    private Set<String> pendingURLS = new LinkedHashSet<String>();
+    private Queue<String> queue = new LinkedList<String>();
+
+    private Set<String> StopWords;
+
+    public void StartFromSeed(int no_threads, int maxPending, int layers) {
+        LoadSeedFromFile();
+        StartThreading(no_threads, maxPending, layers);
+        printCrawled();
+        SaveCrawledToFile();
+        SavePendingToFile();
+    }
+
+    public void StartFromSave(int no_threads, int maxPending, int layers) {
+        LoadCrawledFromFile();
+        LoadPendingFromFile();
+        StartThreading(no_threads, maxPending, layers);
+        SavePendingToFile();
+        SaveCrawledToFile();
+    }
+
+    private void StartThreading(int no_threads, int maxPending, int layers) {
+        queue.addAll(pendingURLS);
+        no_threads++;
+        Thread[] thread = new Thread[no_threads];
+        AtomicBoolean signalQueueEmpty = new AtomicBoolean(true);
+        for (int i = 0; i < no_threads; i++) {
+            thread[i] = new Thread(new CrawlerThreads(crawledURLS, pendingURLS, queue, robotsDisallow, maxPending, layers, signalQueueEmpty));
+            thread[i].setName("thread " + i);
+        }
+        for (int i = 0; i < no_threads; i++) {
+            thread[i].start();
+        }
+        for (Thread t : thread) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void SaveCrawledToFile() {
+        crawledURLS.addAll(pendingURLS);
+        String savePath = "CrawledURLs.txt";
+        try {
+            FileWriter writer = new FileWriter(savePath);
+            for (String s : crawledURLS) {
+                if (s != null) {
+                    writer.write(s);
+                    writer.write("\n");
+                }
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Error in saving crawled links " + e.getMessage());
+        }
+    }
+
+    private void SavePendingToFile() {
+        String savePath = "PendingURLs.txt";
+        try {
+            FileWriter writer = new FileWriter(savePath);
+            for (String s : pendingURLS) {
+                writer.write(s);
+                writer.write("\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("Error in saving pending links " + e.getMessage());
+        }
+    }
+
+    private void LoadCrawledFromFile() {
+        try {
+            String loadFile = "CrawledURLs.txt";
+            FileReader fileReader = new FileReader(loadFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                crawledURLS.add(line);
+            }
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + e.getMessage());
+        }
+    }
+
+
+    private void LoadPendingFromFile() {
+        try {
+            String loadFile = "PendingURLs.txt";
+            FileReader fileReader = new FileReader(loadFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                pendingURLS.add(line);
+            }
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + e.getMessage());
+        }
+    }
+
+    private void LoadSeedFromFile() {
+        try {
+            String loadFile = "SeedURLs.txt";
+            FileReader fileReader = new FileReader(loadFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                pendingURLS.add(line);
+            }
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + e.getMessage());
+        }
+    }
+
+    private void printCrawled() {
+        for (String s : crawledURLS) {
+            System.out.println(s);
+        }
+    }
+
+    public void stopedWord() {
+        BufferedReader reader = null;
+        ArrayList<String> stopword = new ArrayList<String>();
+
+        try {
+            reader = new BufferedReader(new FileReader("stopWord"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stopword.add(line);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (reader != null)
+                    reader.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Set<String> set = new HashSet<>(stopword);
+        StopWords = set;
+    }
+
+    private void InsertWordsIntoDB(String[] words,String URL) throws URISyntaxException, IOException, InterruptedException {
+        Map<String, Integer> WordsWithURL = new HashMap<>();
+        Request request=new Request();
+        for (String word : words) {
+            if (!StopWords.contains(word)) {
+                Integer value1 = WordsWithURL.getOrDefault(word, 0); // Value is 10
+                value1++;
+                WordsWithURL.put(word, value1);
+            }
+        }
+        for (String Key : WordsWithURL.keySet()) {
+            Integer value= WordsWithURL.get(Key);
+            String data=String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}",Key,URL,value);
+            request.post("http://localhost:3000/Word/Insert",data);//insert lock
+        }
+    }
+
+    public void getFromFileInsetIntoDB() throws InterruptedException, URISyntaxException, JSONException {
+        Request request = new Request();
+
+        try {
+            String loadFile = "CrawledURLs.txt";
+            String URLHttp = "http://localhost:3000/URL/insert";
+
+            FileReader fileReader = new FileReader(loadFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line;
+            int i = 0;
+
+            while ((line = reader.readLine()) != null) {
+                try {
+                    Document doc = Jsoup.connect(line).get();
+                    String Title = doc.title();
+                    String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
+                    int Rank = 0, NumberofWords = words.length;
+                    var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", line, Title, Rank, NumberofWords);
+                    String res = request.post(URLHttp, URL);//lock
+                    String avilable = getStringfromJson(res, "message");
+
+                    if (avilable.equals("Created Successfully"))
+                        InsertWordsIntoDB(words,line);
+                } catch (IOException e) {
+                    System.out.println("cannot connect to this URL");
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + e.getMessage());
+        }
+    }
+
+    private String getStringfromJson(String Json, String wantdata) throws JSONException {
+        JSONObject jsonObject = new JSONObject(Json);
+        // Get the value of the "message" field
+        String message = jsonObject.getString(wantdata);
+        return message;
+    }
+}
