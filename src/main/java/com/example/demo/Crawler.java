@@ -10,6 +10,21 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.lucene.analysis.PorterStemFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.util.Version;
+import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.*;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+
 public class Crawler {
     private Set<String> crawledURLS = new HashSet<String>();
     private HashMap<String, HashSet<String>> robotsDisallow = new HashMap<>();
@@ -165,20 +180,45 @@ public class Crawler {
         StopWords = set;
     }
 
-    private void InsertWordsIntoDB(String[] words,String URL) throws URISyntaxException, IOException, InterruptedException {
+    public String Stemmping(String word) throws IOException {
+        // Create an EnglishStemmer instance
+        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, StopWords);//analize text
+        TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
+
+        // Apply Porter stemming using PorterStemFilter
+        PorterStemFilter porterStemFilter = new PorterStemFilter(tokenStream);
+
+        // Retrieve token attributes
+        CharTermAttribute charTermAttribute = porterStemFilter.addAttribute(CharTermAttribute.class);//return text after stemming it
+
+        // Process tokens and print the stemmed output
+        porterStemFilter.reset();
+        porterStemFilter.incrementToken() ;
+        System.out.println("Stemmed word: " + charTermAttribute.toString());
+
+        String WordAfterStemmping = charTermAttribute.toString();
+        // Close the TokenStream
+        porterStemFilter.end();
+        porterStemFilter.close();
+        return WordAfterStemmping;
+    }
+
+    private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
         Map<String, Integer> WordsWithURL = new HashMap<>();
-        Request request=new Request();
+        Request request = new Request();
         for (String word : words) {
-            if (!StopWords.contains(word)) {
-                Integer value1 = WordsWithURL.getOrDefault(word, 0); // Value is 10
+            String StampWord=Stemmping(word);
+            if (StampWord.length()!=0) {
+
+                Integer value1 = WordsWithURL.getOrDefault(StampWord, 0); // Value is 10
                 value1++;
-                WordsWithURL.put(word, value1);
+                WordsWithURL.put(StampWord, value1);
             }
         }
         for (String Key : WordsWithURL.keySet()) {
-            Integer value= WordsWithURL.get(Key);
-            String data=String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}",Key,URL,value);
-            request.post("http://localhost:3000/Word/Insert",data);//insert lock
+            Integer value = WordsWithURL.get(Key);
+            String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}", Key, URL, value);
+            request.post("http://localhost:3000/Word/Insert", data);//insert lock
         }
     }
 
@@ -196,8 +236,10 @@ public class Crawler {
 
             while ((line = reader.readLine()) != null) {
                 try {
+
                     Document doc = Jsoup.connect(line).get();
                     String Title = doc.title();
+
                     String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
                     int Rank = 0, NumberofWords = words.length;
                     var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", line, Title, Rank, NumberofWords);
@@ -205,7 +247,7 @@ public class Crawler {
                     String avilable = getStringfromJson(res, "message");
 
                     if (avilable.equals("Created Successfully"))
-                        InsertWordsIntoDB(words,line);
+                        InsertWordsIntoDB(words, line);
                 } catch (IOException e) {
                     System.out.println("cannot connect to this URL");
                 }

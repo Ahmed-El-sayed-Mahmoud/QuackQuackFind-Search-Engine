@@ -1,0 +1,10 @@
+const express = require("express")
+const URLMiddelWare = require("../MiddelWare/UrlMiddleWare")
+const URLController = require("../Controller/UrlController")
+const router = express.Router()
+router.post("/Insert", URLMiddelWare.CheckData, URLController.InseartURL)
+router.delete("/Delete", URLMiddelWare.ExistMiddleWare, URLController.DeleteURL)
+router.patch("/Update", URLMiddelWare.UpdateMiddelWare,URLMiddelWare.ExistMiddleWare, URLController.UpdateURL)
+router.get("/Get", URLMiddelWare.ExistMiddleWare, URLController.GetInfo)
+router.get("/GetNumberofLinks",URLController.GetNumbersofURL)
+module.exports = router
