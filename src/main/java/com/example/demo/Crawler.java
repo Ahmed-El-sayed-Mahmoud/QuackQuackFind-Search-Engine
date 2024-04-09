@@ -15,16 +15,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.Version;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import java.io.*;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-
 public class Crawler {
     private Set<String> crawledURLS = new HashSet<String>();
     private HashMap<String, HashSet<String>> robotsDisallow = new HashMap<>();

@@ -25,7 +25,7 @@ public class Request {
         return responseBody;
 
     }
-    public String GetWord (String Word)throws URISyntaxException, IOException, InterruptedException
+    public static String GetWord (String Word)throws URISyntaxException, IOException, InterruptedException
     {
         var uri = new URI("http://localhost:3000/Word/Get/"+Word);
 
