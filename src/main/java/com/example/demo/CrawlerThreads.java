@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CrawlerThreads implements Runnable {
-    private Set<String> crawledURLS;
-    private Set<String> pendingURLS;
+    private HashMap<String, Integer> crawledURLS;
+    private HashSet<String> pendingURLS;
     private Queue<String> queue;
     private HashMap<String, HashSet<String>> robotsDisallow;
     private AtomicBoolean signalQueueEmpty;
@@ -32,7 +32,7 @@ public class CrawlerThreads implements Runnable {
     private int maxPending;
     ///////////////////////////////////////test
 
-    public CrawlerThreads(Set<String> crawledURLS, Set<String> pendingURLS, Queue<String> queue, HashMap<String, HashSet<String>> robotsDisallow, int maxPending, int layers, AtomicBoolean signalQueueEmpty) {
+    public CrawlerThreads(HashMap<String, Integer> crawledURLS, HashSet<String> pendingURLS, Queue<String> queue, HashMap<String, HashSet<String>> robotsDisallow, int maxPending, int layers, AtomicBoolean signalQueueEmpty) {
         this.crawledURLS = crawledURLS;
         this.pendingURLS = pendingURLS;
         this.queue = queue;
@@ -52,11 +52,11 @@ public class CrawlerThreads implements Runnable {
 
     private void crawl() {
         while (layers > 0 && SyncPendingsize() < maxPending) {
-            System.out.println(Thread.currentThread().getName() + " number of pending URLS " + SyncPendingsize());
+            System.out.println(Thread.currentThread().getName() + " number of Crawled URLS " + SyncCrawledSize());
             String cur_URL = SyncQueuePoll();
             crawl_step(cur_URL);
             SyncRemovePending(cur_URL);
-            SyncAddCrawled(cur_URL);
+
         }
         terminateQueueInit();
     }
@@ -115,14 +115,31 @@ public class CrawlerThreads implements Runnable {
         }
     }
 
-
-    private void SyncAddCrawled(String url) {
+    private int SyncCrawledSize() {
         synchronized (crawledURLS) {
-            crawledURLS.add(url);
+            return crawledURLS.size();
         }
     }
 
-    private void SyncAddPending(String url) throws URISyntaxException, InterruptedException {
+
+    private void SyncAddCrawled(String url) {
+        synchronized (crawledURLS) {
+            if (crawledURLS.containsKey(url)) {
+                crawledURLS.put(url, crawledURLS.get(url) + 1);
+            } else {
+                crawledURLS.put(url, 1);
+            }
+        }
+    }
+
+    private boolean SyncContainsCrawled(String url) {
+        synchronized (crawledURLS) {
+            return crawledURLS.containsKey(url);
+        }
+    }
+
+
+    private void SyncAddPending(String url) {
         synchronized (pendingURLS) {
             pendingURLS.add(url);
         }
@@ -153,26 +170,32 @@ public class CrawlerThreads implements Runnable {
         }
     }
 
-    private void crawl_step(String url) {
+    private synchronized void crawl_step(String url) {
         try {
-            String userAgent = "Crawler1.0";
-            String html = getHTML(url, userAgent);
-            if (html != null) {
-                Document doc = Jsoup.parse(html);
-                Elements elements = doc.select("a");
-                URL Url = new URL(url);
-                String baseURL = Url.getProtocol() + "://" + Url.getHost();
-                for (Element e : elements) {
-                    String href = e.attr("href");
-                    String processedhref = processLinks(href, url);
-                    boolean allowed = robotsTxtHandler(baseURL, userAgent, href);
-                    if (processedhref != null && UrlValidator.getInstance().isValid(processedhref) && allowed) {
-                        SyncAddPending(processedhref);
-                        //////////////////////////////////////////////////////
-//                        System.out.println(processedhref);
-//
-//                        insertUrlIntoDB(processedhref, doc);
-                    }
+            Elements elements = new Elements();
+            int i = 10;
+            while (elements.isEmpty() && i > 0) {
+                i--;
+                Document doc = Jsoup.connect(url).get();
+                elements = doc.select("a[href]");
+                Thread.sleep(1000);
+                //  System.out.println(doc);
+            }
+            String userAgent = "Crawler";
+            URL baseUrl = new URL(url);
+            String baseHost = baseUrl.getProtocol() + "://" + baseUrl.getHost();
+            String compactedUrl = baseHost + baseUrl.getPath();
+
+            for (Element e : elements) {
+                String href = e.attr("abs:href");
+                URL newUrl= new URL (href);
+                String compactedhref =newUrl.getProtocol() + "://" + newUrl.getHost() + newUrl.getPath();
+                String processedHref = processLinks(compactedhref, compactedUrl);
+                boolean allowed = robotsTxtHandler(baseHost, userAgent, compactedhref);
+
+                if (processedHref != null && UrlValidator.getInstance().isValid(processedHref) && allowed) {
+                    SyncAddPending(processedHref);
+                    SyncAddCrawled(processedHref);
                 }
             }
         } catch (Exception e) {
@@ -295,26 +318,26 @@ public class CrawlerThreads implements Runnable {
 
     public void insertUrlIntoDB(String Url, Document doc) throws InterruptedException, URISyntaxException {
         Request request = new Request();
-            try {
-                String URLHttp = "http://localhost:3000/URL/insert";
+        try {
+            String URLHttp = "http://localhost:3000/URL/insert";
 
-                String Title = doc.title();//title
-                String[] Words = doc.body().select("*").text().split("\\s+");
-                int NumberofWords = Words.length;
-                int Rank = 0;
-                var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", Url, Title, Rank, NumberofWords);
-                synchronized (this) {
-                    String res = request.post(URLHttp, URL);
-                    System.out.println(res);
+            String Title = doc.title();//title
+            String[] Words = doc.body().select("*").text().split("\\s+");
+            int NumberofWords = Words.length;
+            int Rank = 0;
+            var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", Url, Title, Rank, NumberofWords);
+            synchronized (this) {
+                String res = request.post(URLHttp, URL);
+                System.out.println(res);
 
-                }
+            }
 //                System.out.println(i++);
 //            }
-                //here must call update IDF after inserted all file
+            //here must call update IDF after inserted all file
 //            reader.close();
-            } catch (IOException e) {
-                System.err.println("Error reading from file: " + e.getMessage());
-            }
+        } catch (IOException e) {
+            System.err.println("Error reading from file: " + e.getMessage());
+        }
 
     }
 }

@@ -16,9 +16,9 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.Version;
 public class Crawler {
-    private Set<String> crawledURLS = new HashSet<String>();
+    private HashMap<String,Integer> crawledURLS = new HashMap<String,Integer>();
     private HashMap<String, HashSet<String>> robotsDisallow = new HashMap<>();
-    private Set<String> pendingURLS = new LinkedHashSet<String>();
+    private HashSet<String> pendingURLS = new LinkedHashSet<String>();
     private Queue<String> queue = new LinkedList<String>();
 
     private Set<String> StopWords;
@@ -32,12 +32,13 @@ public class Crawler {
     }
 
     public void StartFromSave(int no_threads, int maxPending, int layers) {
-        LoadCrawledFromFile();
+        //LoadCrawledFromFile();
         LoadPendingFromFile();
         StartThreading(no_threads, maxPending, layers);
         SavePendingToFile();
         SaveCrawledToFile();
     }
+
 
     private void StartThreading(int no_threads, int maxPending, int layers) {
         queue.addAll(pendingURLS);
@@ -62,15 +63,13 @@ public class Crawler {
 
 
     private void SaveCrawledToFile() {
-        crawledURLS.addAll(pendingURLS);
         String savePath = "CrawledURLs.txt";
         try {
             FileWriter writer = new FileWriter(savePath);
-            for (String s : crawledURLS) {
-                if (s != null) {
-                    writer.write(s);
-                    writer.write("\n");
-                }
+            for (HashMap.Entry<String, Integer> entry : crawledURLS.entrySet()) {
+                String url = entry.getKey();
+                int count = entry.getValue();
+                writer.write(url + " " + count + "\n");
             }
             writer.close();
         } catch (IOException e) {
@@ -91,6 +90,7 @@ public class Crawler {
             System.out.println("Error in saving pending links " + e.getMessage());
         }
     }
+/*
 
     private void LoadCrawledFromFile() {
         try {
@@ -106,6 +106,7 @@ public class Crawler {
             System.err.println("Error reading from file: " + e.getMessage());
         }
     }
+*/
 
 
     private void LoadPendingFromFile() {
@@ -139,8 +140,10 @@ public class Crawler {
     }
 
     private void printCrawled() {
-        for (String s : crawledURLS) {
-            System.out.println(s);
+        for (HashMap.Entry<String, Integer> entry : crawledURLS.entrySet()) {
+            String url = entry.getKey();
+            int count = entry.getValue();
+            System.out.println(url + " " + count + "\n");
         }
     }
 

@@ -15,11 +15,11 @@ public class SearchEngineApplication {
 	public static void main(String[] args) throws JSONException, URISyntaxException, InterruptedException {
 
 
-		SpringApplication.run(SearchEngineApplication.class, args);
-		//Crawler bot = new Crawler();
+	//	SpringApplication.run(SearchEngineApplication.class, args);
+		Crawler bot = new Crawler();
 		//bot.stopedWord();
 //
-		//bot.StartFromSeed(100, 100000, 3);
+		bot.StartFromSeed(100, 10000, 3);
 		//bot.getFromFileInsetIntoDB();
 		//List<Doc> list =Ranker.GetUrls("list");
 //		Map<String,List<Doc>> list=new HashMap<>();
@@ -37,7 +37,7 @@ public class SearchEngineApplication {
 //		Map<String,ResultDoc> map= ranker.GetUniqueResultDocs(list);
 //		ranker.SetTfIdf(map,list);
 //		List<ResultDoc> re=ranker.GetRankedDocsTfIdf(map);
-		List<ResultDoc> re=ranker.GetResult("data structure integer string");
+	//	List<ResultDoc> re=ranker.GetResult("data structure integer string");
 
 	}
 
