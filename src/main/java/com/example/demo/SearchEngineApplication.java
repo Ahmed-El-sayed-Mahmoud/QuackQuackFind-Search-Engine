@@ -17,7 +17,7 @@ public class SearchEngineApplication {
 
 	//	SpringApplication.run(SearchEngineApplication.class, args);
 		Crawler bot = new Crawler();
-		//bot.stopedWord();
+		bot.stopedWord();
 //
 		//bot.StartFromSeed(100, 10000, 3);
 		bot.getFromFileInsetIntoDB();
