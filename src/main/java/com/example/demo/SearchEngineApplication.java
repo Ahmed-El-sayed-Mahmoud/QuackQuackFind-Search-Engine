@@ -19,8 +19,8 @@ public class SearchEngineApplication {
 		Crawler bot = new Crawler();
 		//bot.stopedWord();
 //
-		bot.StartFromSeed(100, 10000, 3);
-		//bot.getFromFileInsetIntoDB();
+		//bot.StartFromSeed(100, 10000, 3);
+		bot.getFromFileInsetIntoDB();
 		//List<Doc> list =Ranker.GetUrls("list");
 //		Map<String,List<Doc>> list=new HashMap<>();
 //		List<Doc>list1=new ArrayList<>();
