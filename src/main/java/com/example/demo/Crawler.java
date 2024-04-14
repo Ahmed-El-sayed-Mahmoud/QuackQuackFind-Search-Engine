@@ -15,8 +15,9 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.Version;
+
 public class Crawler {
-    private HashMap<String,Integer> crawledURLS = new HashMap<String,Integer>();
+    private HashMap<String, Integer> crawledURLS = new HashMap<String, Integer>();
     private HashMap<String, HashSet<String>> robotsDisallow = new HashMap<>();
     private HashSet<String> pendingURLS = new LinkedHashSet<String>();
     private Queue<String> queue = new LinkedList<String>();
@@ -186,7 +187,7 @@ public class Crawler {
 
         // Process tokens and print the stemmed output
         porterStemFilter.reset();
-        porterStemFilter.incrementToken() ;
+        porterStemFilter.incrementToken();
         System.out.println("Stemmed word: " + charTermAttribute.toString());
 
         String WordAfterStemmping = charTermAttribute.toString();
@@ -200,8 +201,8 @@ public class Crawler {
         Map<String, Integer> WordsWithURL = new HashMap<>();
         Request request = new Request();
         for (String word : words) {
-            String StampWord=Stemmping(word);
-            if (StampWord.length()!=0) {
+            String StampWord = Stemmping(word);
+            if (StampWord.length() != 0) {
 
                 Integer value1 = WordsWithURL.getOrDefault(StampWord, 0); // Value is 10
                 value1++;
@@ -229,18 +230,20 @@ public class Crawler {
 
             while ((line = reader.readLine()) != null) {
                 try {
-
-                    Document doc = Jsoup.connect(line).get();
+                    String url = line.split(" ")[0];
+                    Document doc = Jsoup.connect(url).get();
                     String Title = doc.title();
 
                     String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
-                    int Rank = 0, NumberofWords = words.length;
-                    var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", line, Title, Rank, NumberofWords);
+                    int Rank = Integer.parseInt(line.split(" ")[1]);
+                    int NumberofWords = words.length;
+                    var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", url, Title, Rank, NumberofWords);
+                    System.out.println(URL);
                     String res = request.post(URLHttp, URL);//lock
                     String avilable = getStringfromJson(res, "message");
 
-                    if (avilable.equals("Created Successfully"))
-                        InsertWordsIntoDB(words, line);
+                   if (avilable.equals("Created Successfully"))
+                       InsertWordsIntoDB(words, url);
                 } catch (IOException e) {
                     System.out.println("cannot connect to this URL");
                 }
