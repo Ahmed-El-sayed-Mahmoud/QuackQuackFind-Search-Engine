@@ -1,8 +1,13 @@
 package com.example.demo;
+
 import org.json.JSONException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,16 +17,22 @@ import java.util.Map;
 @SpringBootApplication
 public class SearchEngineApplication {
 
-	public static void main(String[] args) throws JSONException, URISyntaxException, InterruptedException {
+    public static void main(String[] args) throws JSONException, URISyntaxException, InterruptedException, FileNotFoundException {
+        Object lock = new Object();
+        //	SpringApplication.run(SearchEngineApplication.class, args);
+        Crawler bot = new Crawler();
+        bot.stopedWord();
+        bot.getFromFile();//get urls from file
+        int number_Threads = 1000;
+        for (int i = 0; i < number_Threads; i++) {
+            Thread thread = new DB(number_Threads, lock);
+            thread.setName(Integer.toString(i));
+            thread.start();
+        }
 
-
-	//	SpringApplication.run(SearchEngineApplication.class, args);
-		Crawler bot = new Crawler();
-		bot.stopedWord();
-//
-		//bot.StartFromSeed(100, 10000, 3);
-		bot.getFromFileInsetIntoDB();
-		//List<Doc> list =Ranker.GetUrls("list");
+        //bot.StartFromSeed(100, 10000, 3);
+        //bot.getFromFileInsetIntoDB();
+        //List<Doc> list =Ranker.GetUrls("list");
 //		Map<String,List<Doc>> list=new HashMap<>();
 //		List<Doc>list1=new ArrayList<>();
 //		list1.add(new Doc("url1","sdf",1,1,"list"));
@@ -33,12 +44,12 @@ public class SearchEngineApplication {
 //		list2.add(new Doc("url2","sdf",1,1,"list"));
 //		list2.add(new Doc("url1","sdf",1,1,"list"));
 //		list.put("hash",list2);
-		Ranker ranker=new Ranker();
+        //	Ranker ranker=new Ranker();
 //		Map<String,ResultDoc> map= ranker.GetUniqueResultDocs(list);
 //		ranker.SetTfIdf(map,list);
 //		List<ResultDoc> re=ranker.GetRankedDocsTfIdf(map);
-	//	List<ResultDoc> re=ranker.GetResult("data structure integer string");
+        //	List<ResultDoc> re=ranker.GetResult("data structure integer string");
 
-	}
+    }
 
 }

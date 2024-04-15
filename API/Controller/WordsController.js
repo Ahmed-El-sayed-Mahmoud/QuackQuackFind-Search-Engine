@@ -30,9 +30,9 @@ const InseartWordForFirstTime = async (req, res) => {
         const{ _id, NumberofWords }=url
         const TF = CalculateTF(Occure, NumberofWords)
         const countDocuments = await URLController.GetNumbersofURL()
-        const IDF = CalculateIDF(countDocuments, 1)
+      //  const IDF = CalculateIDF(countDocuments, 1)
 
-        const word = await Words.create({ Word: Word, Urls: [{ Url: _id, NumofOccure: Occure, TF }], IDF: IDF })
+        const word = await Words.create({ Word: Word, Urls: [{ Url: _id, NumofOccure: Occure, TF }] })
         res.status(201).json({ message: "Inserted Successfully" })}
         else
         res.status(400).json({message:"this link isnot exist"})
@@ -44,6 +44,7 @@ const InseartWordForFirstTime = async (req, res) => {
 
 
 }
+
 const Update = async (word, req, res) => {
     const { URL, Occure } = req.body
     try {
@@ -70,12 +71,12 @@ const Update = async (word, req, res) => {
         // else //not exist before
         // {
         const TF = CalculateTF(Occure, NumberofWords)//number of occure will bw 1 it is first url time
-        const countDocuments = await URLController.GetNumbersofURL()
-        const IDF = CalculateIDF(countDocuments, urls.length + 1)//increase array by one number of links which have this word
+       // const countDocuments = await URLController.GetNumbersofURL()
+       // const IDF = CalculateIDF(countDocuments, urls.length + 1)//increase array by one number of links which have this word
 
         urls.push({ Url: _id, NumofOccure:Occure , TF })//push it
         instance.Urls = urls
-        instance.IDF = IDF
+       // instance.IDF = IDF
 
         await instance.save()
         // await UpdateIDF(countDocuments)
@@ -101,21 +102,21 @@ const Update = async (word, req, res) => {
 function CalculateTF(NumberofOccure, NumberofWords) {
     return (NumberofOccure / NumberofWords)
 }
-function CalculateIDF(NumberofTotalDocuments, NumberofDocuments) {
-    return Math.log((NumberofTotalDocuments / NumberofDocuments))
-}
-//important
-//every change of number of url or word's url so must call after insert a link with his all words  or after delete a link
-const UpdateIDF = async (req, res) => {
+// function CalculateIDF(NumberofTotalDocuments, NumberofDocuments) {
+//     return Math.log((NumberofTotalDocuments / NumberofDocuments))
+// }
+// //important
+// //every change of number of url or word's url so must call after insert a link with his all words  or after delete a link
+// const UpdateIDF = async (req, res) => {
 
-    const allWord = await Words.find({})
+//     const allWord = await Words.find({})
 
-    for (let obj of allWord) {
-        obj.IDF = CalculateIDF(await (URLController.GetNumbersofURL()), (obj.Urls).length)
-        await obj.save()
-    }
-    res.status(200).json({ message: "Updated all the database" })
-}
+//     for (let obj of allWord) {
+//         obj.IDF = CalculateIDF(await (URLController.GetNumbersofURL()), (obj.Urls).length)
+//         await obj.save()
+//     }
+//     res.status(200).json({ message: "Updated all the database" })
+// }
 ////////////////////////////Delete//////////////////////////////////////////
 const DeleteWordInaURL = async (req, res) => {
     if (req.body.URL == null)
@@ -160,13 +161,13 @@ const GetWordInfo = async (req, res) => {
         result.push(instance)
 
     }
-    res.status(200).json({ message: "Send Information Successfully", URLS: result, IDF: parseFloat((word.IDF).toString()) })
+    res.status(200).json({ message: "Send Information Successfully", URLS: result })
 }
 
 
 ////////////////////////////////////////////////////////
 
-module.exports = { FinalInsert, DeleteWordInaURL, UpdateIDF, GetWordInfo }
+module.exports = { FinalInsert, DeleteWordInaURL, GetWordInfo }
 
 
 

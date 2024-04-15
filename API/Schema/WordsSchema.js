@@ -17,7 +17,8 @@ const Word = new mongoose.Schema({
         TF:mongoose.Schema.Types.Decimal128,
 
     }],
-    IDF:mongoose.Schema.Types.Decimal128,
+   // IDF:mongoose.Schema.Types.Decimal128,
 
+   
 })
 module.exports = mongoose.model("Word", Word)
