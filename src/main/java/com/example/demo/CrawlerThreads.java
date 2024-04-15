@@ -6,18 +6,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CrawlerThreads implements Runnable {
@@ -26,7 +20,6 @@ public class CrawlerThreads implements Runnable {
     private Queue<String> queue;
     private HashMap<String, HashSet<String>> robotsDisallow;
     private AtomicBoolean signalQueueEmpty;
-
     private int layers;
 
     private int maxPending;
@@ -340,4 +333,5 @@ public class CrawlerThreads implements Runnable {
         }
 
     }
+
 }

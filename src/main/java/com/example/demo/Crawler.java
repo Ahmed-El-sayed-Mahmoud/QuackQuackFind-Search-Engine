@@ -22,7 +22,8 @@ public class Crawler {
     private HashSet<String> pendingURLS = new LinkedHashSet<String>();
     private Queue<String> queue = new LinkedList<String>();
 
-    private Set<String> StopWords;
+    public    Set<String> StopWords;
+   static public     ArrayList<String> links;
 
     public void StartFromSeed(int no_threads, int maxPending, int layers) {
         LoadSeedFromFile();
@@ -197,27 +198,71 @@ public class Crawler {
         return WordAfterStemmping;
     }
 
-    private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
-        Map<String, Integer> WordsWithURL = new HashMap<>();
-        Request request = new Request();
-        for (String word : words) {
-            String StampWord = Stemmping(word);
-            if (StampWord.length() != 0) {
+//    private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
+//        Map<String, Integer> WordsWithURL = new HashMap<>();
+//        Request request = new Request();
+//        for (String word : words) {
+//            String StampWord = Stemmping(word);
+//            if (StampWord.length() != 0) {
+//
+//                Integer value1 = WordsWithURL.getOrDefault(StampWord, 0); // Value is 10
+//                value1++;
+//                WordsWithURL.put(StampWord, value1);
+//            }
+//        }
+//        for (String Key : WordsWithURL.keySet()) {
+//            Integer value = WordsWithURL.get(Key);
+//            String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}", Key, URL, value);
+//            request.post("http://localhost:3000/Word/Insert", data);//insert lock
+//        }
+//    }
 
-                Integer value1 = WordsWithURL.getOrDefault(StampWord, 0); // Value is 10
-                value1++;
-                WordsWithURL.put(StampWord, value1);
-            }
-        }
-        for (String Key : WordsWithURL.keySet()) {
-            Integer value = WordsWithURL.get(Key);
-            String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}", Key, URL, value);
-            request.post("http://localhost:3000/Word/Insert", data);//insert lock
-        }
+//    public void getFromFileInsetIntoDB() throws InterruptedException, URISyntaxException, JSONException {
+//        Request request = new Request();
+//
+//        try {
+//            String loadFile = "CrawledURLs.txt";
+//            String URLHttp = "http://localhost:3000/URL/insert";
+//
+//            FileReader fileReader = new FileReader(loadFile);
+//            BufferedReader reader = new BufferedReader(fileReader);
+//            String line;
+//            int i = 0;
+//
+//            while ((line = reader.readLine()) != null) {
+//                try {
+//                    String url = line.split(" ")[0];
+//                    Document doc = Jsoup.connect(url).get();
+//                    String Title = doc.title();
+//
+//                    String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
+//                    int Rank = Integer.parseInt(line.split(" ")[1]);
+//                    int NumberofWords = words.length;
+//                    var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", url, Title, Rank, NumberofWords);
+//                    System.out.println(URL);
+//                    String res = request.post(URLHttp, URL);//lock
+//                    String avilable = getStringfromJson(res, "message");
+//
+//                   if (avilable.equals("Created Successfully"))
+//                       InsertWordsIntoDB(words, url);
+//                } catch (IOException e) {
+//                    System.out.println("cannot connect to this URL");
+//                }
+//            }
+//            reader.close();
+//        } catch (IOException e) {
+//            System.err.println("Error reading from file: " + e.getMessage());
+//        }
+//    }
+
+    private String getStringfromJson(String Json, String wantdata) throws JSONException {
+        JSONObject jsonObject = new JSONObject(Json);
+        // Get the value of the "message" field
+        String message = jsonObject.getString(wantdata);
+        return message;
     }
-
-    public void getFromFileInsetIntoDB() throws InterruptedException, URISyntaxException, JSONException {
-        Request request = new Request();
+    public void getFromFile() {
+        links =    new ArrayList<>();
 
         try {
             String loadFile = "CrawledURLs.txt";
@@ -229,35 +274,14 @@ public class Crawler {
             int i = 0;
 
             while ((line = reader.readLine()) != null) {
-                try {
-                    String url = line.split(" ")[0];
-                    Document doc = Jsoup.connect(url).get();
-                    String Title = doc.title();
-
-                    String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
-                    int Rank = Integer.parseInt(line.split(" ")[1]);
-                    int NumberofWords = words.length;
-                    var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", url, Title, Rank, NumberofWords);
-                    System.out.println(URL);
-                    String res = request.post(URLHttp, URL);//lock
-                    String avilable = getStringfromJson(res, "message");
-
-                   if (avilable.equals("Created Successfully"))
-                       InsertWordsIntoDB(words, url);
-                } catch (IOException e) {
-                    System.out.println("cannot connect to this URL");
-                }
+                //
+                links.add(line);
+                System.out.println(links.get(i));
+                i++;
             }
-            reader.close();
-        } catch (IOException e) {
-            System.err.println("Error reading from file: " + e.getMessage());
-        }
-    }
 
-    private String getStringfromJson(String Json, String wantdata) throws JSONException {
-        JSONObject jsonObject = new JSONObject(Json);
-        // Get the value of the "message" field
-        String message = jsonObject.getString(wantdata);
-        return message;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
