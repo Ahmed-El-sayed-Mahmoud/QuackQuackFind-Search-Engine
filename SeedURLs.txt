@@ -1,4 +1,3 @@
-https://www.wikipedia.org/
 https://medium.com/
 https://stackoverflow.com
 https://www.geeksforgeeks.org/
