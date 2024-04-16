@@ -15,16 +15,15 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 public class DB extends Thread {
-    Crawler crawler=new Crawler();
+    Crawler crawler = new Crawler();
 
     private int number_Theads;
     private Object lock; // Define the lock object as a member variable
 
-    public DB(int number_Threads,Object lock) {
+    public DB(int number_Threads, Object lock) {
         this.number_Theads = number_Threads;
-        this.lock=lock;
+        this.lock = lock;
     }
-
 
 
     private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
@@ -42,13 +41,14 @@ public class DB extends Thread {
         for (String Key : WordsWithURL.keySet()) {
             Integer value = WordsWithURL.get(Key);
             String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}", Key, URL, value);
-            System.out.println("Thread number "+this.getName() +" data= "+data);
-                      synchronized (lock) {
-       request.post("http://localhost:3000/Word/Insert", data);//insert lock
-//
+            System.out.println("Thread number " + this.getName() + " data= " + data);
+            synchronized (lock) {
+                request.post("http://localhost:3000/Word/Insert", data);//insert lock
+
             }
         }
     }
+
 
     public void getFromFileInsetIntoDB(String line) throws InterruptedException, URISyntaxException, JSONException {
         Request request = new Request();
@@ -67,11 +67,11 @@ public class DB extends Thread {
             System.out.println(URL);
             String res;
 
-               res = request.post(URLHttp, URL);//lock
+            res = request.post(URLHttp, URL);//lock
             String avilable = getStringfromJson(res, "message");
-            System.out.println("Thread number "+this.getName() +" URL= "+URL);
+            System.out.println("Thread number " + this.getName() + " URL= " + URL);
 
-           if (avilable.equals("Created Successfully"))
+            if (avilable.equals("Created Successfully"))
                 InsertWordsIntoDB(words, url);
         } catch (IOException e) {
             System.out.println("cannot connect to this URL");
@@ -90,34 +90,19 @@ public class DB extends Thread {
     public void run() {
         int size = Crawler.links.size();
         int number = Integer.parseInt(this.getName());
-        int start = number * (size / number_Theads);//each thread take hoe many link
-
-        if (number != number_Theads - 1) {
-            for (int i = start; i < start + (size / number_Theads); i++) {
-                try {
-                    getFromFileInsetIntoDB(Crawler.links.get(i));
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-
+//        int start = number * (size / number_Theads);//each thread take hoe many link
+        if (number < size) {
+            try {
+                getFromFileInsetIntoDB(Crawler.links.get(number));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
-        } else {
-            for (int i = start; i < size; i++) {//if number not divisible by total number of thread
-                try {
-                    getFromFileInsetIntoDB(crawler.links.get(i));
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
 
-            }
+
         }
 
     }

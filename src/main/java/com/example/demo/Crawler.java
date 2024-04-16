@@ -22,8 +22,8 @@ public class Crawler {
     private HashSet<String> pendingURLS = new LinkedHashSet<String>();
     private Queue<String> queue = new LinkedList<String>();
 
-    public    Set<String> StopWords;
-   static public     ArrayList<String> links;
+    public Set<String> StopWords;
+    static public ArrayList<String> links;
 
     public void StartFromSeed(int no_threads, int maxPending, int layers) {
         LoadSeedFromFile();
@@ -261,8 +261,9 @@ public class Crawler {
         String message = jsonObject.getString(wantdata);
         return message;
     }
-    public void getFromFile() {
-        links =    new ArrayList<>();
+
+    public void getFromFile(int links_number) {
+        links = new ArrayList<>();
 
         try {
             String loadFile = "CrawledURLs.txt";
@@ -272,11 +273,16 @@ public class Crawler {
             BufferedReader reader = new BufferedReader(fileReader);
             String line;
             int i = 0;
-
+            int k = 0;
             while ((line = reader.readLine()) != null) {
-                //
-                links.add(line);
-                System.out.println(links.get(i));
+
+                if (i >= (links_number * 500) && i < (links_number * 500 + 500)) {
+                    links.add(line);
+                    System.out.println(i);
+                }
+                if (i >= (links_number * 500 + 500))
+                    break;
+
                 i++;
             }
 
