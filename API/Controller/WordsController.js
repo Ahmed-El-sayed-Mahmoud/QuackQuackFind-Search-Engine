@@ -22,20 +22,20 @@ const FinalInsert = async (req, res) => {
 
 }
 const InseartWordForFirstTime = async (req, res) => {
-    const { Word, URL ,Occure} = req.body
+    const { Word, URL, Occure } = req.body
     try {
-        const  url= await (URLController.GetInfoByURL(URL))
-        if(url!=null)
-        {
-        const{ _id, NumberofWords }=url
-        const TF = CalculateTF(Occure, NumberofWords)
-        const countDocuments = await URLController.GetNumbersofURL()
-      //  const IDF = CalculateIDF(countDocuments, 1)
+        const url = await (URLController.GetInfoByURL(URL))
+        if (url != null) {
+            const { _id, NumberofWords } = url
+            const TF = CalculateTF(Occure, NumberofWords)
+            const countDocuments = await URLController.GetNumbersofURL()
+            //  const IDF = CalculateIDF(countDocuments, 1)
 
-        const word = await Words.create({ Word: Word, Urls: [{ Url: _id, NumofOccure: Occure, TF }] })
-        res.status(201).json({ message: "Inserted Successfully" })}
+            const word = await Words.create({ Word: Word, Urls: [{ Url: _id, NumofOccure: Occure, TF }] })
+            res.status(201).json({ message: "Inserted Successfully" })
+        }
         else
-        res.status(400).json({message:"this link isnot exist"})
+            res.status(400).json({ message: "this link isnot exist" })
     }
     catch (e) {
         console.error(e)
@@ -49,41 +49,42 @@ const Update = async (word, req, res) => {
     const { URL, Occure } = req.body
     try {
         const url = await (URLController.GetInfoByURL(URL))
-         if (url == null)
-             res.status(404).json({ message: "This Url dosent exist " })
-         else {
-        const { _id, NumberofWords } = url//get url inforamtion
-        // console.log(_id)
-        const instance = word//get word instance from database
-        const urls = instance.Urls//get lists of links
-        // const existURL = urls.findIndex((obj) => (obj.Url).toString() === (_id).toString())
-        // if (existURL >= 0)//exist in this link before
-        // {
-        //     const existIndex = urls[existURL]
-        //     const TF = CalculateTF(existIndex.NumofOccure + 1, NumberofWords)//Numberofoccure will increase by 1
-        //     const countDocuments = await URLController.GetNumbersofURL()
-        //     const IDF = CalculateIDF(countDocuments, urls.length)//the same
-        //     instance.Urls[existURL] = { Url: _id, NumofOccure: existIndex.NumofOccure + 1, TF }
-        //     instance.IDF = IDF
-        //     await instance.save()
-        // }
+        if (url == null)
+            res.status(404).json({ message: "This Url dosent exist " })
+        else {
+            const { _id, NumberofWords } = url//get url inforamtion
+            // console.log(_id)
+            const instance = word//get word instance from database
+            const urls = instance.Urls//get lists of links
+            // const existURL = urls.findIndex((obj) => (obj.Url).toString() === (_id).toString())
+            // if (existURL >= 0)//exist in this link before
+            // {
+            //     const existIndex = urls[existURL]
+            //     const TF = CalculateTF(existIndex.NumofOccure + 1, NumberofWords)//Numberofoccure will increase by 1
+            //     const countDocuments = await URLController.GetNumbersofURL()
+            //     const IDF = CalculateIDF(countDocuments, urls.length)//the same
+            //     instance.Urls[existURL] = { Url: _id, NumofOccure: existIndex.NumofOccure + 1, TF }
+            //     instance.IDF = IDF
+            //     await instance.save()
+            // }
 
-        // else //not exist before
-        // {
-        const TF = CalculateTF(Occure, NumberofWords)//number of occure will bw 1 it is first url time
-       // const countDocuments = await URLController.GetNumbersofURL()
-       // const IDF = CalculateIDF(countDocuments, urls.length + 1)//increase array by one number of links which have this word
+            // else //not exist before
+            // {
+            const TF = CalculateTF(Occure, NumberofWords)//number of occure will bw 1 it is first url time
+            // const countDocuments = await URLController.GetNumbersofURL()
+            // const IDF = CalculateIDF(countDocuments, urls.length + 1)//increase array by one number of links which have this word
 
-        urls.push({ Url: _id, NumofOccure:Occure , TF })//push it
-        instance.Urls = urls
-       // instance.IDF = IDF
+            urls.push({ Url: _id, NumofOccure: Occure, TF })//push it
+            instance.Urls = urls
+            // instance.IDF = IDF
 
-        await instance.save()
-        // await UpdateIDF(countDocuments)
+            await instance.save()
+            // await UpdateIDF(countDocuments)
 
-        ///////////////update IDF for all words after increment number of total documents or number of document related to  word
-        // }
-        res.status(200).json({ message: "Inserted Successfully" })}
+            ///////////////update IDF for all words after increment number of total documents or number of document related to  word
+            // }
+            res.status(200).json({ message: "Inserted Successfully" })
+        }
     }
 
 
