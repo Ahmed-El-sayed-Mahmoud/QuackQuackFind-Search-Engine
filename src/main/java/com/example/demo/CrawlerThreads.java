@@ -44,7 +44,7 @@ public class CrawlerThreads implements Runnable {
     }
 
     private void crawl() {
-        while (layers > 0 && SyncPendingsize() < maxPending) {
+        while (layers > 0 && SyncCrawledSize()<maxPending) {
             System.out.println(Thread.currentThread().getName() + " number of Crawled URLS " + SyncCrawledSize());
             String cur_URL = SyncQueuePoll();
             crawl_step(cur_URL);
