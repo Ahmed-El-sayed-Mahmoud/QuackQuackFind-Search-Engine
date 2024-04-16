@@ -31,7 +31,7 @@ public class SearchEngineApplication {
             thread.start();
         }
 */
-        bot.StartFromSeed(100, 6000, 3);
+        bot.StartFromSeed(100, 1000, 3);
         //bot.getFromFileInsetIntoDB();
         //List<Doc> list =Ranker.GetUrls("list");
 //		Map<String,List<Doc>> list=new HashMap<>();
