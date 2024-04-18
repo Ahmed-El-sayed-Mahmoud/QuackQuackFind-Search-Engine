@@ -8,7 +8,7 @@ const ExistMiddleWare = async (req, res, next) => {
         res.status(400).json({ message: "Word is required" });
     else {
         const Word = await Words.findOne({ Word: word });
-        
+
         if (Word != null) {
             req.params.word = Word;//Return element
             next()
@@ -23,8 +23,10 @@ const ExistMiddleWare = async (req, res, next) => {
 const CheckData = async (req, res, next) => {
     if (req.body.Word == null)
         res.status(400).json({ message: "Word is required" });
-    else if (req.body.URL == null)
-        res.status(400).json({ message: "URL is required" });
+    else if (req.body.id == null)
+        res.status(400).json({ message: "id is required" });
+    else if (req.body.NumberofWords == null)
+        res.status(400).json({ message: "NumberofWords is required" });
     else
         next()
 }
