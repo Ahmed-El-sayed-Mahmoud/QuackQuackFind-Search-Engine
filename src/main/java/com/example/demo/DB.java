@@ -26,7 +26,7 @@ public class DB extends Thread {
     }
 
 
-    private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
+    private void InsertWordsIntoDB(String[] words,String id,int NumberofWords) throws URISyntaxException, IOException, InterruptedException {
         Map<String, Integer> WordsWithURL = new HashMap<>();
         Request request = new Request();
         for (String word : words) {
@@ -38,13 +38,61 @@ public class DB extends Thread {
                 WordsWithURL.put(StampWord, value1);
             }
         }
-        for (String Key : WordsWithURL.keySet()) {
-            Integer value = WordsWithURL.get(Key);
-            String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Occure\":%d}", Key, URL, value);
-            System.out.println("Thread number " + this.getName() + " data= " + data);
-            synchronized (lock) {
-                request.post("http://localhost:3000/Word/Insert", data);//insert lock
+        List<String> keys = new ArrayList<>(WordsWithURL.keySet());
 
+        synchronized (lock) {
+            int numThreads=100;
+            for (int i = 0; i < numThreads; i++)//number of thread 50
+            {
+                int finalI = i;
+                Thread wordThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int size = keys.size();
+                        int num = size / numThreads;//1000/50 20
+                        if (finalI < numThreads-1) {
+                            for (int j = finalI * num; j < (finalI * num + num); j++) {
+
+                                Integer value = WordsWithURL.get(keys.get(j));
+                                String data = String.format("{\"Word\":\"%s\",\"id\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j),id,NumberofWords, value);
+                                System.out.println("Thread number " + j + " data= " + data);
+
+                                try {
+                                    request.post("http://localhost:3000/Word/Insert", data);//insert lock
+                                } catch (URISyntaxException e) {
+                                    throw new RuntimeException(e);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+
+                            }
+                        } else {
+                            for (int j = finalI * num; j < keys.size(); j++) {
+
+                                Integer value = WordsWithURL.get(keys.get(j));
+                                String data = String.format("{\"Word\":\"%s\",\"id\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j),id,NumberofWords, value);
+                                System.out.println("Thread number " + j + " data= " + data);
+
+                                try {
+                                    request.post("http://localhost:3000/Word/Insert", data);//insert lock
+                                } catch (URISyntaxException e) {
+                                    throw new RuntimeException(e);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+
+                            }
+                        }
+                    }
+
+                });
+                wordThread.start();
             }
         }
     }
@@ -71,9 +119,12 @@ public class DB extends Thread {
             String avilable = getStringfromJson(res, "message");
             System.out.println("Thread number " + this.getName() + " URL= " + URL);
 
-            if (avilable.equals("Created Successfully"))
-                InsertWordsIntoDB(words, url);
-        } catch (IOException e) {
+            if (avilable.equals("Created Successfully")) {
+                String id = (getStringfromJson(res, "id"));
+                InsertWordsIntoDB(words,id,NumberofWords);
+
+
+            }} catch (IOException e) {
             System.out.println("cannot connect to this URL");
         }
 
