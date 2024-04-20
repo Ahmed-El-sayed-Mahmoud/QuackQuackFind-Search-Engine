@@ -7,9 +7,13 @@ const Word = new mongoose.Schema({
     },
     Urls: [{
         Url: {
-            type: mongoose.SchemaTypes.ObjectId,
-            ref:"URL"
+            // type: mongoose.SchemaTypes.ObjectId,
+            // ref:"URL"
+           type: String,
+           
         },
+        Title:String
+        ,
         NumofOccure: {
             default: 0,
             type: Number

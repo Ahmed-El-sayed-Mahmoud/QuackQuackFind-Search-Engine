@@ -2,42 +2,44 @@ const Words = require("../Schema/WordsSchema")
 const URLController = require("./UrlController")
 const URLMiddelWare = require("../MiddelWare/UrlMiddleWare")
 ///////////////////////Insert////////////////////////////////////////
-const Update = async ( req, res) => {
-    const { id,NumberofWords, Occure,Word } = req.body;
+const Update = async (req, res) => {
+    const { URL, Title, NumberofWords, Occure, Word } = req.body;
     try {
+
+        
         //const url = await URLController.GetInfoByURL(URL);
         //if (url == null)
-          //  res.status(404).json({ message: "This URL does not exist" });
-        
-          const TF = CalculateTF(Occure, NumberofWords); // Calculate TF
+        //  res.status(404).json({ message: "This URL does not exist" });
 
-            // Check if word exists
-            word=await Words.findOne({"Word":Word})
-            if (!word) {
-                // If word doesn't exist, create a new one
-                word =await Words.create({ Word: Word, Urls: [{ Url: id, NumofOccure: Occure, TF }] })
-            }
-            else{
+        const TF = CalculateTF(Occure, NumberofWords); // Calculate TF
+
+        // Check if word exists
+        word = await Words.findOne({ "Word": Word })
+        if (!word) {
+            // If word doesn't exist, create a new one
+            word = await Words.create({ Word: Word, Urls: [{ Url: URL, Title: Title, NumofOccure: Occure, TF }] })
+        }
+        else {
             // Check if urls is null or empty
             if (!word.Urls || word.Urls.length === 0) {
                 word.Urls = []; // Initialize urls as an empty array
             }
 
-
             // Push new URL information to the urls array
-            word.Urls.push({ Url: id, NumofOccure: Occure, TF });
+            word.Urls.push({ Url: URL, Title: Title, NumofOccure: Occure, TF });
 
             // Update word with the updated urls array
             await word.save();
         }
-            res.status(200).json({ message: "Inserted Successfully" });
-         //   console.log("inserted")
-        
+        res.status(200).json({ message: "Inserted Successfully" });
+        console.log("inserted")
+
     } catch (e) {
         console.error(e);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 function CalculateTF(NumberofOccure, NumberofWords) {
     return (NumberofOccure / NumberofWords)
@@ -93,16 +95,17 @@ const DeleteWordInaURL = async (req, res) => {
 const GetWordInfo = async (req, res) => {
     const word = req.params.word
     const urls = word.Urls
-    let result = []
-    for (const obj of urls) {
-        const { TF, Url } = obj
-        const { URL, Title, Rank } = await URLController.GetInfoByID(Url)
-        const instance = { URL: URL, Title: Title, Rank: Rank, TF: parseFloat((TF).toString()) }
-        result.push(instance)
+    //let result = []
+    // for (const obj of urls) {
+    //     const { TF, Url } = obj
+    //     const { URL, Title, Rank } = await URLController.GetInfoByID(Url)
+    //     const instance = { URL: URL, Title: Title, Rank: Rank, TF: parseFloat((TF).toString()) }
+    //     result.push(instance)
 
-    }
-    res.status(200).json({ message: "Send Information Successfully", URLS: result })
+    // }
+    res.status(200).json({ message: "Send Information Successfully", URLS: urls })
 }
+
 
 
 ////////////////////////////////////////////////////////

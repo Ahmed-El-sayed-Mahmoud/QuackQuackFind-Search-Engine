@@ -5,6 +5,8 @@ const Url = require("../Schema/UrlSchema")
 const InseartURL = async (req, res) => {
     const { URL, Title, Rank, NumberofWords } = req.body
     const exist = await Url.findOne({ URL: URL });
+    //console.log("d")
+
     if (exist != null)
         res.status(409).json({ message: "Exist" })
     else{
@@ -13,8 +15,8 @@ const InseartURL = async (req, res) => {
     // console.log(url);
     }
 
-
 }
+
 
 ////////////////////////////Delete//////////////////////////////////////////
 const DeleteURL = async (req, res) => {

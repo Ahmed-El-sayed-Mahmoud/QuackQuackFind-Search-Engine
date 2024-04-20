@@ -9,122 +9,155 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DB extends Thread {
+
+public class DB {
     Crawler crawler = new Crawler();
 
     private int number_Theads;
     private Object lock; // Define the lock object as a member variable
-
-    public DB(int number_Threads, Object lock) {
-        this.number_Theads = number_Threads;
+    public Set<String> stopWords;
+//public  Set<String>AllWords;
+    public DB(Object lock, Set<String> stopWords) {
+        //this.number_Theads = number_Threads;
         this.lock = lock;
+        this.stopWords = stopWords;
     }
 
+    public String Stemmping(String word) throws IOException {
+        // Load stopwords from file and create a set
 
-    private void InsertWordsIntoDB(String[] words,String id,int NumberofWords) throws URISyntaxException, IOException, InterruptedException {
-        Map<String, Integer> WordsWithURL = new HashMap<>();
+        // Create an EnglishStemmer instance
+        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, stopWords);
+
+        // Analyze the input word
+        TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
+
+        // Apply Porter stemming using PorterStemFilter
+        PorterStemFilter porterStemFilter = new PorterStemFilter(tokenStream);
+
+        // Retrieve token attributes
+        CharTermAttribute charTermAttribute = porterStemFilter.addAttribute(CharTermAttribute.class);
+
+        // Process tokens and retrieve the stemmed output
+        porterStemFilter.reset();
+        porterStemFilter.incrementToken();
+        String stemmedWord = charTermAttribute.toString();
+
+        // Close the TokenStream
+        porterStemFilter.end();
+        porterStemFilter.close();
+
+        // Return the stemmed word
+        return stemmedWord;
+    }
+
+    // Method to load stopwords from file
+
+
+    private void InsertWordsIntoDB(List<String> words, String URL, String Title, int NumberofWords) throws URISyntaxException, IOException, InterruptedException {
+        Map<String, Integer> wordsWithURL = new ConcurrentHashMap<>();
         Request request = new Request();
-        for (String word : words) {
-            String StampWord = crawler.Stemmping(word);
-            if (StampWord.length() != 0) {
+        List<Thread> threads = new ArrayList<>(); // Create a list to keep track of all created threads
 
-                Integer value1 = WordsWithURL.getOrDefault(StampWord, 0); // Value is 10
-                value1++;
-                WordsWithURL.put(StampWord, value1);
+        for (String string : words) {
+            String[] sunWords = string.split("\\s+");
+            for (String word : sunWords) {
+                String stampedWord = Stemmping(word);
+                if (!stampedWord.isEmpty()) {
+                    int val = wordsWithURL.getOrDefault(stampedWord, 0);
+                    wordsWithURL.put(stampedWord, ++val);
+                }
             }
         }
-        List<String> keys = new ArrayList<>(WordsWithURL.keySet());
+
+        List<String> keys = new CopyOnWriteArrayList<>(wordsWithURL.keySet());
 
         synchronized (lock) {
-            int numThreads=100;
-            for (int i = 0; i < numThreads; i++)//number of thread 50
-            {
+            int numThreads = 100;
+            int size = keys.size();
+            int batchSize = (size + numThreads - 1) / numThreads; // Calculate batch size to evenly distribute elements among threads
+
+            for (int i = 0; i < numThreads; i++) {
                 int finalI = i;
-                Thread wordThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        int size = keys.size();
-                        int num = size / numThreads;//1000/50 20
-                        if (finalI < numThreads-1) {
-                            for (int j = finalI * num; j < (finalI * num + num); j++) {
+                Thread wordThread = new Thread(() -> {
+                    for (int j = finalI * batchSize; j < Math.min((finalI + 1) * batchSize, size); j++) {
+                        // Process each element within the assigned batch
+                        Integer value = wordsWithURL.get(keys.get(j));
+                        String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Title\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j), URL, Title, NumberofWords, value);
+                        System.out.println("Thread number " + finalI + " data= " + data);
 
-                                Integer value = WordsWithURL.get(keys.get(j));
-                                String data = String.format("{\"Word\":\"%s\",\"id\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j),id,NumberofWords, value);
-                                System.out.println("Thread number " + j + " data= " + data);
-
-                                try {
-                                    request.post("http://localhost:3000/Word/Insert", data);//insert lock
-                                } catch (URISyntaxException e) {
-                                    throw new RuntimeException(e);
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
-
-
-                            }
-                        } else {
-                            for (int j = finalI * num; j < keys.size(); j++) {
-
-                                Integer value = WordsWithURL.get(keys.get(j));
-                                String data = String.format("{\"Word\":\"%s\",\"id\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j),id,NumberofWords, value);
-                                System.out.println("Thread number " + j + " data= " + data);
-
-                                try {
-                                    request.post("http://localhost:3000/Word/Insert", data);//insert lock
-                                } catch (URISyntaxException e) {
-                                    throw new RuntimeException(e);
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
-
-
-                            }
+                        try {
+                            request.post("http://localhost:3000/Word/Insert", data);
+                        } catch (URISyntaxException | IOException | InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
                     }
-
                 });
-                wordThread.start();
+                threads.add(wordThread); // Add the thread to the list
+                wordThread.start(); // Start the thread
+            }
+
+            // Join all threads to wait for their completion
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
+
 
 
     public void getFromFileInsetIntoDB(String line) throws InterruptedException, URISyntaxException, JSONException {
         Request request = new Request();
 
         try {
-            String loadFile = "CrawledURLs.txt";
+            // String loadFile = "CrawledURLs.txt";
             String URLHttp = "http://localhost:3000/URL/insert";
             String url = line.split(" ")[0];
             Document doc = Jsoup.connect(url).get();
             String Title = doc.title();
+            int NumberofWords = (doc.text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+")).length;
+            Elements paragraphElements = doc.select("p");
+            Elements headersElements = doc.select("h1, h2, h3, h4, h5, h6");
 
-            String[] words = doc.body().select("*").text().replaceAll("[^a-zA-Z ]", " ").toLowerCase().split("\\s+");
+            // Process and extract text from each paragraph
+            List<String> words = new ArrayList<>();
+            words.add(Title);
+
+//paragraph
+            for (Element paragraph : paragraphElements) {
+                String paragraphText = paragraph.text().replaceAll("[^a-zA-Z ]", " ").toLowerCase();
+                words.add(paragraphText);
+                //System.out.println(paragraphText);
+            }
+            for (Element header : headersElements) {
+                String headerText = header.text().replaceAll("[^a-zA-Z ]", " ").toLowerCase();
+              //  System.out.println(headerText);
+                words.add(headerText);
+            }
+
             int Rank = Integer.parseInt(line.split(" ")[1]);
-            int NumberofWords = words.length;
-            var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", url, Title, Rank, NumberofWords);
-            System.out.println(URL);
-            String res;
 
-            res = request.post(URLHttp, URL);//lock
-            String avilable = getStringfromJson(res, "message");
-            System.out.println("Thread number " + this.getName() + " URL= " + URL);
-
-            if (avilable.equals("Created Successfully")) {
-                String id = (getStringfromJson(res, "id"));
-                InsertWordsIntoDB(words,id,NumberofWords);
+            //var URL = String.format("{\"URL\":\"%s\",\"Title\":\"%s\",\"Rank\":%d,\"NumberofWords\":%d}", url, Title, Rank, NumberofWords);
+            //System.out.println(URL);
 
 
-            }} catch (IOException e) {
+            InsertWordsIntoDB(words, url, Title, NumberofWords);
+
+
+        } catch (IOException e) {
             System.out.println("cannot connect to this URL");
         }
 
@@ -137,25 +170,60 @@ public class DB extends Thread {
         String message = jsonObject.getString(wantdata);
         return message;
     }
-
-    public void run() {
-        int size = Crawler.links.size();
-        int number = Integer.parseInt(this.getName());
-//        int start = number * (size / number_Theads);//each thread take hoe many link
-        if (number < size) {
-            try {
-                getFromFileInsetIntoDB(Crawler.links.get(number));
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-
-
-        }
-
+    public void insert() throws JSONException, URISyntaxException, InterruptedException {
+     for(int i=0;i<crawler.links.size();i++)
+         getFromFileInsetIntoDB(crawler.links.get(i));
     }
 
 }
+//
+//    public void run() {
+//        int size = Crawler.links.size();
+//        int number = Integer.parseInt(this.getName());
+//        try {
+//            getFromFileInsetIntoDB(Crawler.links.get(number));
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        } catch (URISyntaxException e) {
+//            throw new RuntimeException(e);
+//        } catch (JSONException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+////    int start = number * (size / number_Theads);//each thread take hoe many link
+////         if(number!=number_Theads-1){
+////        for(int i=start;i<start+(size / number_Theads);i++) {
+////           {
+////               System.out.println(Crawler.links.get(i)+"index "+i+ "thread "+number);
+//////                try {
+//////                    getFromFileInsetIntoDB(Crawler.links.get(i));
+//////                } catch (InterruptedException e) {
+//////                    throw new RuntimeException(e);
+//////                } catch (URISyntaxException e) {
+//////                    throw new RuntimeException(e);
+//////                } catch (JSONException e) {
+//////                    throw new RuntimeException(e);
+//////                }
+////            }
+////        }}
+////        else
+////            {
+////                for(int i=start;i<start+(size / number_Theads)+(size % number_Theads);i++) {
+////                    {
+////                        try {
+////                            getFromFileInsetIntoDB(Crawler.links.get(i));
+////                        } catch (InterruptedException e) {
+////                            throw new RuntimeException(e);
+////                        } catch (URISyntaxException e) {
+////                            throw new RuntimeException(e);
+////                        } catch (JSONException e) {
+////                            throw new RuntimeException(e);
+////                        }
+////                    }
+////            }
+////
+////        }
+//
+//}
+//
+
