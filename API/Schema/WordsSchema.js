@@ -19,6 +19,7 @@ const Word = new mongoose.Schema({
             type: Number
         },
         TF:mongoose.Schema.Types.Decimal128,
+        Rank:Number
 
     }],
    // IDF:mongoose.Schema.Types.Decimal128,

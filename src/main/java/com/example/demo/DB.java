@@ -63,7 +63,7 @@ public class DB {
     // Method to load stopwords from file
 
 
-    private void InsertWordsIntoDB(List<String> words, String URL, String Title, int NumberofWords) throws URISyntaxException, IOException, InterruptedException {
+    private void InsertWordsIntoDB(List<String> words, String URL, String Title, int NumberofWords,int Rank) throws URISyntaxException, IOException, InterruptedException {
         Map<String, Integer> wordsWithURL = new ConcurrentHashMap<>();
         Request request = new Request();
         List<Thread> threads = new ArrayList<>(); // Create a list to keep track of all created threads
@@ -92,7 +92,7 @@ public class DB {
                     for (int j = finalI * batchSize; j < Math.min((finalI + 1) * batchSize, size); j++) {
                         // Process each element within the assigned batch
                         Integer value = wordsWithURL.get(keys.get(j));
-                        String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Title\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d}", keys.get(j), URL, Title, NumberofWords, value);
+                        String data = String.format("{\"Word\":\"%s\",\"URL\":\"%s\",\"Title\":\"%s\",\"NumberofWords\":%d,\"Occure\":%d,\"Rank\":%d}", keys.get(j), URL, Title, NumberofWords, value,Rank);
                         System.out.println("Thread number " + finalI + " data= " + data);
 
                         try {
@@ -134,7 +134,7 @@ public class DB {
 
             // Process and extract text from each paragraph
             List<String> words = new ArrayList<>();
-            words.add(Title);
+            //words.add(Title);
 
 //paragraph
             for (Element paragraph : paragraphElements) {
@@ -144,7 +144,7 @@ public class DB {
             }
             for (Element header : headersElements) {
                 String headerText = header.text().replaceAll("[^a-zA-Z ]", " ").toLowerCase();
-              //  System.out.println(headerText);
+               // System.out.println(headerText);
                 words.add(headerText);
             }
 
@@ -154,7 +154,7 @@ public class DB {
             //System.out.println(URL);
 
 
-            InsertWordsIntoDB(words, url, Title, NumberofWords);
+            InsertWordsIntoDB(words, url, Title, NumberofWords,Rank);
 
 
         } catch (IOException e) {
