@@ -3,10 +3,10 @@ const URLController = require("./UrlController")
 const URLMiddelWare = require("../MiddelWare/UrlMiddleWare")
 ///////////////////////Insert////////////////////////////////////////
 const Update = async (req, res) => {
-    const { URL, Title, NumberofWords, Occure, Word } = req.body;
+    const { URL, Title, NumberofWords, Occure, Word ,Rank} = req.body;
     try {
 
-        
+
         //const url = await URLController.GetInfoByURL(URL);
         //if (url == null)
         //  res.status(404).json({ message: "This URL does not exist" });
@@ -17,7 +17,7 @@ const Update = async (req, res) => {
         word = await Words.findOne({ "Word": Word })
         if (!word) {
             // If word doesn't exist, create a new one
-            word = await Words.create({ Word: Word, Urls: [{ Url: URL, Title: Title, NumofOccure: Occure, TF }] })
+            word = await Words.create({ Word: Word, Urls: [{ Url: URL, Title: Title, NumofOccure: Occure, TF:TF,Rank:Rank }] })
         }
         else {
             // Check if urls is null or empty
@@ -26,7 +26,7 @@ const Update = async (req, res) => {
             }
 
             // Push new URL information to the urls array
-            word.Urls.push({ Url: URL, Title: Title, NumofOccure: Occure, TF });
+            word.Urls.push({ Url: URL, Title: Title, NumofOccure: Occure, TF:TF,Rank:Rank });
 
             // Update word with the updated urls array
             await word.save();
