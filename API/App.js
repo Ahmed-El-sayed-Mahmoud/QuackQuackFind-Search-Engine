@@ -11,9 +11,11 @@ app.use("/URL",URLRouter)
 app.use("/Word",WordRouter)
 
 
-
 app.listen(3000,()=>{
-    console.log("connected")
+    console.log("connected at port 3000")
 
 })
+
+
+
 

@@ -18,12 +18,14 @@ const ExistMiddleWare = async (req, res, next) => {
         }
     }
 
+
 }
+
 /////////////////////////////////////////////////////
 const CheckData = async (req, res, next) => {
     if (req.body.Word == null)
         res.status(400).json({ message: "Word is required" });
-    else if (req.body.id == null)
+    else if (req.body.URL == null)
         res.status(400).json({ message: "id is required" });
     else if (req.body.NumberofWords == null)
         res.status(400).json({ message: "NumberofWords is required" });

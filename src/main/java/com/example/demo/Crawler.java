@@ -22,7 +22,7 @@ public class Crawler {
     private HashSet<String> pendingURLS = new LinkedHashSet<String>();
     private Queue<String> queue = new LinkedList<String>();
 
-    public Set<String> StopWords;
+  //  public Set<String> StopWords;
     static public ArrayList<String> links;
 
     public void StartFromSeed(int no_threads, int maxPending, int layers) {
@@ -149,7 +149,7 @@ public class Crawler {
         }
     }
 
-    public void stopedWord() {
+    public Set<String>  stopedWord() {
         BufferedReader reader = null;
         ArrayList<String> stopword = new ArrayList<String>();
 
@@ -172,31 +172,31 @@ public class Crawler {
             }
         }
         Set<String> set = new HashSet<>(stopword);
-        StopWords = set;
+        return set;
     }
 
-    public String Stemmping(String word) throws IOException {
-        // Create an EnglishStemmer instance
-        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, StopWords);//analize text
-        TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
-
-        // Apply Porter stemming using PorterStemFilter
-        PorterStemFilter porterStemFilter = new PorterStemFilter(tokenStream);
-
-        // Retrieve token attributes
-        CharTermAttribute charTermAttribute = porterStemFilter.addAttribute(CharTermAttribute.class);//return text after stemming it
-
-        // Process tokens and print the stemmed output
-        porterStemFilter.reset();
-        porterStemFilter.incrementToken();
-        System.out.println("Stemmed word: " + charTermAttribute.toString());
-
-        String WordAfterStemmping = charTermAttribute.toString();
-        // Close the TokenStream
-        porterStemFilter.end();
-        porterStemFilter.close();
-        return WordAfterStemmping;
-    }
+//    public String Stemmping(String word) throws IOException {
+//        // Create an EnglishStemmer instance
+//        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, StopWords);//analize text
+//        TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
+//
+//        // Apply Porter stemming using PorterStemFilter
+//        PorterStemFilter porterStemFilter = new PorterStemFilter(tokenStream);
+//
+//        // Retrieve token attributes
+//        CharTermAttribute charTermAttribute = porterStemFilter.addAttribute(CharTermAttribute.class);//return text after stemming it
+//
+//        // Process tokens and print the stemmed output
+//        porterStemFilter.reset();
+//        porterStemFilter.incrementToken();
+//        System.out.println("Stemmed word: " + charTermAttribute.toString());
+//
+//        String WordAfterStemmping = charTermAttribute.toString();
+//        // Close the TokenStream
+//        porterStemFilter.end();
+//        porterStemFilter.close();
+//        return WordAfterStemmping;
+//    }
 
 //    private void InsertWordsIntoDB(String[] words, String URL) throws URISyntaxException, IOException, InterruptedException {
 //        Map<String, Integer> WordsWithURL = new HashMap<>();
