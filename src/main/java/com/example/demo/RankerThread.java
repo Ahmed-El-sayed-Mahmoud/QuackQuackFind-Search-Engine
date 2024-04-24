@@ -17,12 +17,16 @@ public class RankerThread implements Runnable
 
     public void GetTfIdf()
     {
+
         int size=DocsFromDb.size();
         for(Doc doc : DocsFromDb)
         {
-            synchronized (this.uniqueResDocs.get(doc.URL))
+            synchronized (this.uniqueResDocs.get(doc.URL.toLowerCase()))
             {
-                uniqueResDocs.get(doc.URL).TfIdf += doc.TF * Math.log10( ((double)numUniqueUrls / size));
+
+                uniqueResDocs.get(doc.URL.toLowerCase()).TfIdf += doc.TF * Math.log10((double)numUniqueUrls/size);
+
+
             }
         }
     }

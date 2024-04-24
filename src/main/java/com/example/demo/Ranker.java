@@ -32,26 +32,40 @@ public class Ranker
             Object object =UrlsArr.getJSONObject(i);
             JSONObject jObject=(JSONObject) object;
             Doc doc=new Doc();
-            doc.URL=jObject.getString("URL");
-            doc.Title=jObject.getString("Title");
+            doc.URL=jObject.getString("Url");
+            doc.Title=jObject.getString("Title").toLowerCase();
             doc.Word=Word;
-            doc.Rank=jObject.getDouble("Rank");
-            doc.TF=jObject.getDouble("TF");
+            doc.Rank=jObject.getInt("Rank");
+            doc.TF=jObject.getJSONObject("TF").getDouble("$numberDecimal");
             ResultList.add(doc);
         }
         return ResultList;
     }
-    public Map<String,ResultDoc> GetUniqueResultDocs(Map<String,List<Doc>> Dic)
+    public Map<String,ResultDoc> GetUniqueResultDocs(Map<String,List<Doc>> Dic,String[]wordsArray)
     {
         Map<String,ResultDoc> UniqueResDocs=new HashMap<>();
         for (Map.Entry<String, List<Doc>> entry : Dic.entrySet()) {
-            String key = entry.getKey();
+           // String key = entry.getKey();
             List<Doc> val = entry.getValue();
             for(Doc c: val)
             {
+                if(UniqueResDocs.containsKey(c.URL))
+                {
+                    UniqueResDocs.get(c.URL).WordsIncluded++;
+                    continue;
+                }
                 ResultDoc resultDoc=new ResultDoc();
-                resultDoc.Url=c.URL;
+                resultDoc.Url=c.URL.toLowerCase();
                 resultDoc.Tf =c.TF;
+                resultDoc.rank=c.Rank;
+                resultDoc.Title=c.Title.toLowerCase();
+                int i=0;
+                for(String s:wordsArray)
+                {
+                    if(resultDoc.Title.contains(wordsArray[i++]))
+                        resultDoc.WordsTitleIncluded++;
+                }
+                resultDoc.QueryToTile= (double)resultDoc.WordsTitleIncluded/c.Title.split("\\s+").length;
                 UniqueResDocs.put(resultDoc.Url,resultDoc);
             }
 
@@ -64,7 +78,7 @@ public class Ranker
         Thread[] threads = new Thread[NumQueryTerms];
         int index=0;
         for (Map.Entry<String, List<Doc>> entry : UrlsFromDB.entrySet()) {
-            String key = entry.getKey();
+           // String key = entry.getKey();
             threads[index]=new Thread(new RankerThread(UniqueResDocs,entry.getValue(),NumUniqueUrls));
             threads[index++].start();
         }
@@ -73,16 +87,21 @@ public class Ranker
 
     }
 
-    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs)
+    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs,String[] wordsArray)
     {
         List<ResultDoc> list =new ArrayList<>( UniqueResDocs.values());
-        Comparator<ResultDoc> TFIDFComparator = Comparator.comparing(ResultDoc::GetTfIdf).reversed();
+        Comparator<ResultDoc> TFIDFComparator = Comparator.comparing(ResultDoc::WordsTitleIncluded)
+                .thenComparing(ResultDoc::WordsTitleTFIDF)
+        .thenComparing(ResultDoc::WordsIncluded).thenComparing(ResultDoc::QueryToTile)
+                .thenComparing(ResultDoc::CalcScores).thenComparing(ResultDoc::SecondScores).reversed();
+
+
         list.sort(TFIDFComparator);
         return  list;
     }
-    public List<ResultDoc>GetResult(String Query) throws JSONException, InterruptedException {
+    public  List<ResultDoc>GetResult(String[] wordsArray) throws JSONException, InterruptedException {
         Map<String,List<Doc>> list=new HashMap<>();
-        String[] wordsArray = Query.split("\\s+");
+        //String[] wordsArray = Query.split("\\s+");
         for(String x : wordsArray)
         {
             List<Doc> WordUrls=GetUrls(x);
@@ -90,9 +109,9 @@ public class Ranker
                 continue;
             list.put(x,WordUrls);
         }
-        Map<String,ResultDoc> UniqueResults= GetUniqueResultDocs(list);
+        Map<String,ResultDoc> UniqueResults= GetUniqueResultDocs(list,wordsArray);
         SetTfIdf(UniqueResults,list);
-        List<ResultDoc> result=GetRankedDocsTfIdf(UniqueResults);
+        List<ResultDoc> result=GetRankedDocsTfIdf(UniqueResults,wordsArray);
         return result;
 
     }

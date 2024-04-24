@@ -31,8 +31,9 @@ public class DB {
         this.lock = lock;
         this.stopWords = stopWords;
     }
-
-    public String Stemmping(String word) throws IOException {
+public DB()
+{}
+    public  String Stemmping(String word) throws IOException {
         // Load stopwords from file and create a set
 
         // Create an EnglishStemmer instance
