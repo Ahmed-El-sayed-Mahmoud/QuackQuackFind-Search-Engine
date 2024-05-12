@@ -1,0 +1,117 @@
+body {
+    background-color: #f0f0f0;
+    font-family: 'Open Sans', sans-serif;
+    overflow-y: auto; /* Allow vertical scrolling */
+}
+.header-title{
+    text-align: center;
+    font-size: 30px;
+    margin-top: 20px;
+    color: #de5833;
+}
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 10vh;
+    padding: 20px;
+}
+
+.search-input {
+    width: 400px;
+    height: 40px;
+    padding: 3px 10px;
+    font-size: 16px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+}
+
+.search-button {
+    margin-left: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #de5833;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.search-button:hover {
+    background-color: #c2492d;
+}
+/* Style the search results */
+.search-results {
+    margin-top: 10px;
+    padding: 20px 10px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Style the individual search result items */
+.search-result {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.page-numbers-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 30px;
+}
+
+.page-numbers-container button {
+    margin-left: 10px;
+    padding: 10px 20px;
+    font-size: 24px;
+    background-color: #de5833;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.image-container {
+    width: 100px; /* Adjust as needed */
+    height: 200px; /* Adjust as needed */
+    overflow: hidden; /* Ensure the image stays within the circular boundaries */
+}
+
+.image{
+  position: absolute;
+  top: 20%; /* Position at 50% from the top */
+  left: 50%; /* Position at 50% from the left */
+  transform: translate(-50%, -50%); /* Center the image */
+  width: 150px; /* Adjust as needed */
+  height: 150px; /* Adjust as needed */
+  border-radius: 50%; /* Make the image circular */
+}
+
+.loading-container .image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 50px;
+    top: 40%; /* Position at 50% from the top */
+    width: 300px; /* Adjust as needed */
+    height: 300px; /* Adjust as needed */
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 50px;
+}
+
+.loading-container h1 {
+    position: absolute;
+    top :500px;
+}
+
