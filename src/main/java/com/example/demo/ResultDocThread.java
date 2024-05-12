@@ -94,18 +94,19 @@ public class ResultDocThread implements Runnable
                     Document document = Jsoup.connect(doc.Url).get();
                     // Select all headers
                     Elements paragraphs = document.select("p"); // Select all paragraphs
-                    Elements headers = document.select("h1, h2, h3, h4"); // Select all headers
+                    Elements headers = document.select("h5,h4, h3,h2,h1"); // Select all headers
 
-//                    if (!PhraseSearch)
-//                        for (Element header : headers) {
-//                            if (doc.Describtion == null || doc.Describtion.length() == 0)
-//                                doc.Describtion = highlightQueryWords(header, NormalQuery, PhraseSearch);
-//                        }
+
+                        for (Element header : headers) {
+                            if (doc.Describtion == null || doc.Describtion.length() == 0)
+                                doc.Describtion = highlightQueryWords(header, NormalQuery, PhraseSearch);
+                            else break;
+                           }
 
                     //Search and highlight in paragraphs
                     for (Element paragraph : paragraphs) {
                         if (doc.Describtion == null || doc.Describtion.length() == 0)
-                            highlightQueryWords(paragraph, NormalQuery, PhraseSearch);
+                           doc.Describtion= highlightQueryWords(paragraph, NormalQuery, PhraseSearch);
                         else
                             break;
                     }
