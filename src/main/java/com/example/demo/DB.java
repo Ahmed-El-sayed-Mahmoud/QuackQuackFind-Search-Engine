@@ -38,12 +38,9 @@ public class DB {
         this.stopWords = stopWords;
     }
     public String Stemmping(String word) throws IOException {
-        // Load stopwords from file and create a set
 
-        // Create an EnglishStemmer instance
         StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, stopWords);
 
-        // Analyze the input word
         TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
 
         // Apply Porter stemming using PorterStemFilter

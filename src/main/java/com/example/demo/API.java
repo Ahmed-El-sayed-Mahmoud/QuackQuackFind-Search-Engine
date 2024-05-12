@@ -1,10 +1,7 @@
 package com.example.demo;
 
 import org.json.JSONException;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,7 +15,7 @@ public class API {
     Ranker ranker=new Ranker();
     public API()
     {
-        db = new DB(Crawler.stopedWord());
+        db= new DB(Crawler.stopedWord());
     }
     @GetMapping("search/{query}")
     public List<ResultDoc> greet(@PathVariable String query) throws JSONException, IOException, InterruptedException {
@@ -45,5 +42,19 @@ public class API {
             System.out.println(s);
 
         return  ranker.GetResult(StemmedQueryWords,NormalQuery,PhraseSearch);
+    }
+
+    @PostMapping("api")
+    public List<ResultDoc> processDocs(@RequestBody DocReq docReq ) throws JSONException, IOException, InterruptedException {
+        // Process the array of Doc objects here3
+        ResultDoc[] docs= docReq.docs;
+        String NormalQuery=docReq.NormalQuery.toLowerCase();
+        boolean PhraseSearch=false;
+        if(NormalQuery.charAt(0)=='"')
+        {
+            PhraseSearch=true;
+            NormalQuery=NormalQuery.substring(1,NormalQuery.length()-1);
+        }
+        return ranker.GetDescription(Arrays.asList(docs),NormalQuery,PhraseSearch);
     }
 }

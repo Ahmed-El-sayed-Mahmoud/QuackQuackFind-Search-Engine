@@ -10,7 +10,8 @@ import java.util.*;
 
 public class Ranker
 {
-    int THREADS_NUMS=30;
+    int THREADS_NUMS=10;
+    DB db=new DB(Crawler.stopedWord());
     public static List<Doc> GetUrls(String Word) throws JSONException {
         if(Word.length()==0)
             return null;
@@ -36,46 +37,46 @@ public class Ranker
             Object object =UrlsArr.getJSONObject(i);
             JSONObject jObject=(JSONObject) object;
             Doc doc=new Doc();
-            doc.URL=jObject.getString("Url");
-            doc.Title=jObject.getString("Title").toLowerCase();
-            doc.Word=Word;
-            doc.Rank=jObject.getInt("Rank");
-            doc.TF=jObject.getJSONObject("TF").getDouble("$numberDecimal");
+//            doc.URL=jObject.getString("Url");
+//            doc.Title=jObject.getString("Title").toLowerCase();
+//            doc.Word=Word;
+//            doc.Rank=jObject.getInt("Rank");
+//            doc.TF=jObject.getJSONObject("TF").getDouble("$numberDecimal");
             ResultList.add(doc);
         }
         return ResultList;
     }
-    public Map<String,ResultDoc> GetUniqueResultDocs(Map<String,List<Doc>> Dic,String[]wordsArray)
-    {
-        Map<String,ResultDoc> UniqueResDocs=new HashMap<>();
-        for (Map.Entry<String, List<Doc>> entry : Dic.entrySet()) {
-           // String key = entry.getKey();
-            List<Doc> val = entry.getValue();
-            for(Doc c: val)
-            {
-                if(UniqueResDocs.containsKey(c.URL))
-                {
-                    UniqueResDocs.get(c.URL).WordsIncluded++;
-                    continue;
-                }
-                ResultDoc resultDoc=new ResultDoc();
-                resultDoc.Url=c.URL.toLowerCase();
-                resultDoc.Tf =c.TF;
-                resultDoc.rank=c.Rank;
-                resultDoc.Title=c.Title.toLowerCase();
-                int i=0;
-                for(String s:wordsArray)
-                {
-                    if(resultDoc.Title.contains(wordsArray[i++]))
-                        resultDoc.WordsTitleIncluded++;
-                }
-                resultDoc.QueryToTile= (double)resultDoc.WordsTitleIncluded/c.Title.split("\\s+").length;
-                UniqueResDocs.put(resultDoc.Url,resultDoc);
-            }
-
-        }
-        return UniqueResDocs;
-    }
+//    public Map<String,ResultDoc> GetUniqueResultDocs(Map<String,List<ResultDoc>> Dic,String[]wordsArray)
+//    {
+//        Map<String,ResultDoc> UniqueResDocs=new HashMap<>();
+//        for (Map.Entry<String, List<ResultDoc>> entry : Dic.entrySet()) {
+//           // String key = entry.getKey();
+//            List<ResultDoc> val = entry.getValue();
+//            for(ResultDoc c: val)
+//            {
+//                if(UniqueResDocs.containsKey(c.URL))
+//                {
+//                    UniqueResDocs.get(c.URL).WordsIncluded++;
+//                    continue;
+//                }
+//                ResultDoc resultDoc=new ResultDoc();
+//                resultDoc.Url=c.URL.toLowerCase();
+//                resultDoc.Tf =c.TF;
+//                resultDoc.rank=c.Rank;
+//                resultDoc.Title=c.Title.toLowerCase();
+//                int i=0;
+//                for(String s:wordsArray)
+//                {
+//                    if(resultDoc.Title.contains(wordsArray[i++]))
+//                        resultDoc.WordsTitleIncluded++;
+//                }
+//                resultDoc.QueryToTile= (double)resultDoc.WordsTitleIncluded/c.Title.split("\\s+").length;
+//                UniqueResDocs.put(resultDoc.Url,resultDoc);
+//            }
+//
+//        }
+//        return UniqueResDocs;
+//    }
     public void SetTfIdf(Map<String,ResultDoc> UniqueResDocs,Map<String,List<ResultDoc>> UrlsFromDB) throws InterruptedException {
         int NumUniqueUrls= UniqueResDocs.size();
         int NumQueryTerms=UrlsFromDB.size();
@@ -122,7 +123,7 @@ public class Ranker
 //        SetTfIdf(UniqueResults,list);
 //        List<ResultDoc> result=GetRankedDocsTfIdf(UniqueResults,wordsArray);
 //        return result;
-            DB db=new DB(Crawler.stopedWord());
+
             Map<String,ResultDoc> UniqueResults=new HashMap<>();
             Map<String,List<ResultDoc>> UrlsFromDB=new HashMap<>();
 
@@ -189,33 +190,33 @@ public class Ranker
             List<ResultDoc> FinalResultDocs=GetRankedDocsTfIdf(UniqueResults,PhraseSearch,wordsArray.length);
 
 
-            int StartIndex=0;
-            int LastIndex;
-            if(FinalResultDocs.size()<THREADS_NUMS)
-                THREADS_NUMS=FinalResultDocs.size();
+//            int StartIndex=0;
+//            int LastIndex;
+//            if(FinalResultDocs.size()<THREADS_NUMS)
+//                THREADS_NUMS=FinalResultDocs.size();
             Thread[] ResultThreads=new Thread[THREADS_NUMS];
             for (int i=0;i<ResultThreads.length;i++)
             {
 
-                if(i==THREADS_NUMS-1)
-                {
-                    StartIndex=FinalResultDocs.size()-(i+1)*(FinalResultDocs.size()/THREADS_NUMS);
-                    LastIndex=FinalResultDocs.size()-1;
-                }
+//                if(i==THREADS_NUMS-1)
+//                {
+//                    StartIndex=10-(i+1)*(10/THREADS_NUMS);
+//                    LastIndex=10;
+//                }
+//
+//                else
+//                {
+//                    StartIndex=i*(10/THREADS_NUMS);
+//                    LastIndex=StartIndex+(10/THREADS_NUMS);
+//                }
 
-                else
-                {
-                    StartIndex=i*(FinalResultDocs.size()/THREADS_NUMS);
-                    LastIndex=StartIndex+(FinalResultDocs.size()/THREADS_NUMS);
-                }
-
-                if(StartIndex<=LastIndex&&LastIndex<=FinalResultDocs.size())
-                {
-                    ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs.subList(StartIndex,LastIndex),
+//                if(StartIndex<=LastIndex&&LastIndex<=10)
+//                {
+                    ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs.subList(i,i+1),
                             PhraseSearch,NormalQuery));
 
                     ResultThreads[i].start();
-                }
+                //}
             }
             for(int i=0;i<ResultThreads.length;i++)
                 if(ResultThreads[i]!=null)
@@ -226,6 +227,46 @@ public class Ranker
             //FinalResultDocs=FinalResultDocs.stream().filter(t->t.Describtion!=null).toList();
 
         return FinalResultDocs;
+    }
+    public List<ResultDoc> GetDescription(List<ResultDoc> docs,String NormalQuery,boolean PhraseSearch) throws InterruptedException {
+        int StartIndex=0;
+        int LastIndex;
+        if(docs.size()<THREADS_NUMS)
+            THREADS_NUMS=docs.size();
+        Thread[] ResultThreads=new Thread[THREADS_NUMS];
+        for (int i=0;i<ResultThreads.length;i++)
+        {
+            if(THREADS_NUMS==1)
+            {
+                StartIndex=0;
+                LastIndex=docs.size();
+            }
+            else if(i==THREADS_NUMS-1)
+            {
+                StartIndex=docs.size()-(i)*(docs.size()/THREADS_NUMS);
+                LastIndex=docs.size()-1;
+            }
+
+            else
+            {
+                StartIndex=i*(docs.size()/THREADS_NUMS);
+                LastIndex=StartIndex+(docs.size()/THREADS_NUMS);
+            }
+
+            if(StartIndex<=LastIndex&&LastIndex<=docs.size())
+            {
+                ResultThreads[i]=new Thread(new ResultDocThread(docs.subList(StartIndex,LastIndex),
+                        PhraseSearch,NormalQuery));
+
+                ResultThreads[i].start();
+            }
+        }
+        for(int i=0;i<ResultThreads.length;i++)
+            if(ResultThreads[i]!=null)
+                ResultThreads[i].join();
+
+        return docs;
+
     }
 
 }

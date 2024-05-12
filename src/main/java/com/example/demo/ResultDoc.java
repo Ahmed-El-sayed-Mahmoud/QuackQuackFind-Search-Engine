@@ -43,7 +43,7 @@ public class ResultDoc {
     }
     public double QueryToTile()
     {
-        return  QueryToTile+TfIdf*100;
+        return  QueryToTile+TfIdf*500;
     }
     public double SecondScores() {
         Score = 1000 * TfIdf + .6 * rank;
