@@ -97,6 +97,13 @@ public class ResultDocThread implements Runnable
                     Elements headers = document.select("h5,h4, h3,h2,h1"); // Select all headers
 
 
+                    for (Element paragraph : paragraphs) {
+                        if (doc.Describtion == null || doc.Describtion.length() == 0)
+                            doc.Describtion= highlightQueryWords(paragraph, NormalQuery, PhraseSearch);
+                        else
+                            break;
+                    }
+
                         for (Element header : headers) {
                             if (doc.Describtion == null || doc.Describtion.length() == 0)
                                 doc.Describtion = highlightQueryWords(header, NormalQuery, PhraseSearch);
@@ -104,12 +111,7 @@ public class ResultDocThread implements Runnable
                            }
 
                     //Search and highlight in paragraphs
-                    for (Element paragraph : paragraphs) {
-                        if (doc.Describtion == null || doc.Describtion.length() == 0)
-                           doc.Describtion= highlightQueryWords(paragraph, NormalQuery, PhraseSearch);
-                        else
-                            break;
-                    }
+
                 }
             }
 //

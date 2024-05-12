@@ -12,6 +12,8 @@ public class Ranker
 {
     int THREADS_NUMS=30;
     public static List<Doc> GetUrls(String Word) throws JSONException {
+        if(Word.length()==0)
+            return null;
         List<Doc>ResultList=new ArrayList<>();
         String res;
         try {
@@ -89,9 +91,11 @@ public class Ranker
 
     }
 
-    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs)
+    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs,boolean PhraseSearch,int WordsNum) throws InterruptedException
     {
         List<ResultDoc> list =new ArrayList<>( UniqueResDocs.values());
+        if(PhraseSearch)
+            list=list.stream().filter(t->t.WordsIncluded==WordsNum).toList();
         Comparator<ResultDoc> TFIDFComparator = Comparator.comparing(ResultDoc::WordsIncluded)
                 .thenComparing(ResultDoc::WordsTitleIncluded)
                 .thenComparing(ResultDoc::QueryToTile)
@@ -100,7 +104,7 @@ public class Ranker
 
 
        List<ResultDoc> SortedDocs= list.parallelStream()
-                .sorted(TFIDFComparator).limit(200)
+                .sorted(TFIDFComparator).limit(100)
                 .toList();
         return  SortedDocs;
     }
@@ -126,14 +130,19 @@ public class Ranker
             Thread[] threads = new Thread[wordsArray.length];
             for(int i=0;i<threads.length;i++)
             {
-                threads[i]=new Thread(new GetUrlsThread(wordsArray[i],JSONArrayList));
-                threads[i].start();
+                if(wordsArray[i]!="")
+                {
+                    threads[i] = new Thread(new GetUrlsThread(wordsArray[i], JSONArrayList));
+                    threads[i].start();
+                }
             }
             for(int i=0;i<threads.length;i++)
             {
-                threads[i].join();
+                if(threads[i]!=null)
+                    threads[i].join();
             }
-
+            if(JSONArrayList==null)
+                return new ArrayList<ResultDoc>();
             List<ResultDoc> ResultDocs=new ArrayList<>();
             String CurrentWord;
             for(int i=0;i<JSONArrayList.size();i++)
@@ -163,6 +172,8 @@ public class Ranker
                     ResultDocs.add(doc);
                     if(!UniqueResults.containsKey(doc.Url))
                         UniqueResults.put(doc.Url,doc);
+                    else
+                        UniqueResults.get(doc.Url).WordsIncluded++;
                     if(!UrlsFromDB.containsKey(CurrentWord))
                     {
                         List<ResultDoc> temp=new ArrayList<>();
@@ -175,8 +186,7 @@ public class Ranker
             }
 
             SetTfIdf(UniqueResults,UrlsFromDB);
-            List<ResultDoc> FinalResultDocs=GetRankedDocsTfIdf(UniqueResults);
-
+            List<ResultDoc> FinalResultDocs=GetRankedDocsTfIdf(UniqueResults,PhraseSearch,wordsArray.length);
 
 
             int StartIndex=0;
@@ -186,19 +196,28 @@ public class Ranker
             Thread[] ResultThreads=new Thread[THREADS_NUMS];
             for (int i=0;i<ResultThreads.length;i++)
             {
-                StartIndex=i*(FinalResultDocs.size()/THREADS_NUMS);
+
                 if(i==THREADS_NUMS-1)
-                    LastIndex=FinalResultDocs.size()-i*(FinalResultDocs.size()/THREADS_NUMS);
+                {
+                    StartIndex=FinalResultDocs.size()-(i+1)*(FinalResultDocs.size()/THREADS_NUMS);
+                    LastIndex=FinalResultDocs.size()-1;
+                }
+
                 else
+                {
+                    StartIndex=i*(FinalResultDocs.size()/THREADS_NUMS);
                     LastIndex=StartIndex+(FinalResultDocs.size()/THREADS_NUMS);
-                if(StartIndex<LastIndex&&LastIndex<FinalResultDocs.size())
+                }
+
+                System.out.println(FinalResultDocs.size());
+                System.out.println(LastIndex);
+                if(StartIndex<=LastIndex&&LastIndex<FinalResultDocs.size())
                 {
                     ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs.subList(StartIndex,LastIndex),
                             PhraseSearch,NormalQuery));
 
                     ResultThreads[i].start();
                 }
-
             }
             for(int i=0;i<ResultThreads.length;i++)
                 if(ResultThreads[i]!=null)
@@ -206,7 +225,7 @@ public class Ranker
 
 
 
-
+            //FinalResultDocs=FinalResultDocs.stream().filter(t->t.Describtion!=null).toList();
 
         return FinalResultDocs;
     }

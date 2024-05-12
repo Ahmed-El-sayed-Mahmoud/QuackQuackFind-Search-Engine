@@ -21,19 +21,22 @@ public class API {
     @GetMapping("search/{query}")
     public List<ResultDoc> greet(@PathVariable String query) throws JSONException, IOException, InterruptedException {
         boolean PhraseSearch=false;
+        query=query.toLowerCase();
         if(query.charAt(0)=='"')
         {
             PhraseSearch=true;
             query=query.substring(1,query.length()-1);
         }
-        String NormalQuery=db.RemoveStopWords(query);
+        String NormalQuery=query;
+        if(!PhraseSearch)
+            NormalQuery=db.RemoveStopWords(query);
         String[] StemmedQueryWords=query.split("\\s+");
         for(int i=0;i<StemmedQueryWords.length;i++)
         {
            StemmedQueryWords[i]=db.Stemmping(StemmedQueryWords[i]);
         }
         List<String> list = new ArrayList<>(Arrays.asList(StemmedQueryWords));
-        list.remove("");
+        list.removeIf(t -> t.equals("")); // Use equals() to compare strings
         StemmedQueryWords = list.toArray(new String[0]);
         //String str=db.Stemmping(query);
         for(String s : StemmedQueryWords)
