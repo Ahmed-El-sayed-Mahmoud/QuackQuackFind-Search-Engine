@@ -209,9 +209,7 @@ public class Ranker
                     LastIndex=StartIndex+(FinalResultDocs.size()/THREADS_NUMS);
                 }
 
-                System.out.println(FinalResultDocs.size());
-                System.out.println(LastIndex);
-                if(StartIndex<=LastIndex&&LastIndex<FinalResultDocs.size())
+                if(StartIndex<=LastIndex&&LastIndex<=FinalResultDocs.size())
                 {
                     ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs.subList(StartIndex,LastIndex),
                             PhraseSearch,NormalQuery));
