@@ -25,15 +25,19 @@ public class DB {
     private int number_Theads;
     private Object lock; // Define the lock object as a member variable
     public Set<String> stopWords;
-//public  Set<String>AllWords;
+    //public  Set<String>AllWords;
     public DB(Object lock, Set<String> stopWords) {
         //this.number_Theads = number_Threads;
         this.lock = lock;
         this.stopWords = stopWords;
     }
-public DB()
-{}
-    public  String Stemmping(String word) throws IOException {
+    public DB()
+    {}
+    public DB(Set<String> stopWords)
+    {
+        this.stopWords = stopWords;
+    }
+    public String Stemmping(String word) throws IOException {
         // Load stopwords from file and create a set
 
         // Create an EnglishStemmer instance
@@ -59,6 +63,24 @@ public DB()
 
         // Return the stemmed word
         return stemmedWord;
+    }
+
+    public  String RemoveStopWords(String Word)
+    {
+        String[] words = Word.split("\\s+"); // Split by whitespace
+
+        StringBuilder result = new StringBuilder();
+
+        for (String word : words) {
+
+            String lowercaseWord = word.toLowerCase();
+
+            if (!stopWords.contains(lowercaseWord)) {
+                result.append(word).append(" ");
+            }
+        }
+
+        return result.toString().trim();
     }
 
     // Method to load stopwords from file
@@ -145,7 +167,7 @@ public DB()
             }
             for (Element header : headersElements) {
                 String headerText = header.text().replaceAll("[^a-zA-Z ]", " ").toLowerCase();
-               // System.out.println(headerText);
+                // System.out.println(headerText);
                 words.add(headerText);
             }
 
@@ -172,8 +194,8 @@ public DB()
         return message;
     }
     public void insert() throws JSONException, URISyntaxException, InterruptedException {
-     for(int i=0;i<crawler.links.size();i++)
-         getFromFileInsetIntoDB(crawler.links.get(i));
+        for(int i=0;i<crawler.links.size();i++)
+            getFromFileInsetIntoDB(crawler.links.get(i));
     }
 
 }

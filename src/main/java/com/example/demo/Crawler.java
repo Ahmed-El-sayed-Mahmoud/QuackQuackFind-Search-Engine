@@ -148,8 +148,7 @@ public class Crawler {
             System.out.println(url + " " + count + "\n");
         }
     }
-
-    public Set<String>  stopedWord() {
+    public static Set<String>  stopedWord() {
         BufferedReader reader = null;
         ArrayList<String> stopword = new ArrayList<String>();
 

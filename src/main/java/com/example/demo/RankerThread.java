@@ -6,9 +6,9 @@ import java.util.Map;
 public class RankerThread implements Runnable
 {
     Map<String, ResultDoc> uniqueResDocs;
-    List<Doc> DocsFromDb;
+    List<ResultDoc> DocsFromDb;
     int numUniqueUrls;
-    public RankerThread(Map<String, ResultDoc> uniqueResDocs, List<Doc> value, int numUniqueUrls)
+    public RankerThread(Map<String, ResultDoc> uniqueResDocs, List<ResultDoc> value, int numUniqueUrls)
     {
         this.numUniqueUrls=numUniqueUrls;
         this.uniqueResDocs=uniqueResDocs;
@@ -19,12 +19,18 @@ public class RankerThread implements Runnable
     {
 
         int size=DocsFromDb.size();
-        for(Doc doc : DocsFromDb)
+        for(ResultDoc doc : DocsFromDb)
         {
-            synchronized (this.uniqueResDocs.get(doc.URL.toLowerCase()))
+            synchronized (this.uniqueResDocs.get(doc.Url))
             {
 
-                uniqueResDocs.get(doc.URL.toLowerCase()).TfIdf += doc.TF * Math.log10((double)numUniqueUrls/size);
+                if(numUniqueUrls<=size)
+                {
+                    uniqueResDocs.get(doc.Url).TfIdf += doc.Tf ;
+
+                }
+                else
+                    uniqueResDocs.get(doc.Url).TfIdf += doc.Tf * Math.log10((double)numUniqueUrls/size);
 
 
             }

@@ -9,10 +9,12 @@ public class ResultDoc {
     public String Url;
     public double Tf;
     public int rank;
+    public String Word;
     public int WordsIncluded = 1;
     public double Score;
     public int WordsTitleIncluded = 0;
     public double QueryToTile;
+    public String NormalTitle;
 
     @Override
     public int hashCode() {
@@ -37,11 +39,11 @@ public class ResultDoc {
     }
     public double WordsIncluded()
     {
-        return 3*WordsIncluded+TfIdf*100;
+        return WordsIncluded;
     }
     public double QueryToTile()
     {
-        return  QueryToTile;
+        return  QueryToTile+TfIdf*100;
     }
     public double SecondScores() {
         Score = 1000 * TfIdf + .6 * rank;
