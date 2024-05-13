@@ -5,6 +5,7 @@ import clickSound from "./media/quack.mp3";
 import angryDuck from "./media/angry_duck.jpg";
 import runningDuck from "./media/running_duck.jpeg";
 import sadDuck from "./media/sad_duck.png";
+import { set } from "mongoose";
 const ClickSound = () => {
   useEffect(() => {
     // Function to play the sound
@@ -29,32 +30,37 @@ const SearchPage = ({ onSearch }) => {
  
   const [searchResults, setSearchResults] = useState([]);
   const [input, setinput] = useState("");
-  const [shouldUpdateResults, setShouldUpdateResults] = useState(false);
+  const [shouldUpdateResults, setShouldUpdateResults] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [tenSearchResult, setTenSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [searchTime, setSearchTime] = useState(0);
+  const [initialSearch, setinitialSearch] = useState(true);
   const handleSearch = async () => {
     if (input.trim() !== "") {
       setLoading(true);
+      const startTime = performance.now(); // Start timing the search operation
       try {
         const response = await fetch(`http://localhost:8090/search/${input}`);
         if (response.ok) {
           const data = await response.json();
-          SearchResult.set(1,data.slice(0,10));
-          console.log(SearchResult);
+          SearchResult.set(1, data.slice(0, 10));
           setSearchResults(data);
           setTenSearchResult(data.slice(0, 10));
           setShouldUpdateResults(true);
           setCurrentPage(1);
         } else {
+          setinitialSearch(false);
           setShouldUpdateResults(false);
           console.error("Error fetching search results:", response.statusText);
         }
       } catch (error) {
+        setShouldUpdateResults(false);
         console.error("Error fetching search results:", error);
       }
       setLoading(false);
+      const endTime = performance.now(); // End timing the search operation
+      setSearchTime(endTime - startTime); // Calculate and set the search time
     }
   };
 
@@ -134,8 +140,12 @@ const SearchPage = ({ onSearch }) => {
       </div>
     </header>
     {!loading && ( // Render search results only if not loading
+    <div>
+       <div className="search-time">
+        <h3>Search took: {searchTime.toFixed(2)} milliseconds</h3>
+        </div>
       <div className="search-results">
-        {shouldUpdateResults && tenSearchResult.length > 0 ? (
+        {shouldUpdateResults ||initialSearch ?  (
           tenSearchResult.map((doc, index) => (
             <div className="search-result" key={index}>
               <Doc doc={doc} />
@@ -148,6 +158,7 @@ const SearchPage = ({ onSearch }) => {
           </div>
           )
         }
+      </div>
       </div>
     )}
    {shouldUpdateResults && tenSearchResult.length > 0 && ( // Only render page numbers if there are search results
