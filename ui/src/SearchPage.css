@@ -115,3 +115,11 @@ body {
     top :500px;
 }
 
+.not-found-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 49vh;
+    font-size: 50px;
+}
+

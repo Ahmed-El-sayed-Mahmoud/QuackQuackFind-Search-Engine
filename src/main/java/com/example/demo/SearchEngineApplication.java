@@ -20,7 +20,7 @@ public class SearchEngineApplication {
 //        Crawler bot = new Crawler();
 //
 //
-//        // bot.StartFromSeed(100, 1000, 3);0
+//        // bot.StartFromSeed(100, 1000, 3);
 //        System.out.println("Please enter a number represent the starting of indexing links for example 0 mean store first 500 links 1 for the other 500 links and so on up to 13 for index the last 500 links");
 //        Scanner scanner = new Scanner(System.in);
 //        int links_number = scanner.nextInt();

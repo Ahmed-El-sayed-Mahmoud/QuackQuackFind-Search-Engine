@@ -4,7 +4,7 @@ import Doc from "./Doc";
 import clickSound from "./media/quack.mp3";
 import angryDuck from "./media/angry_duck.jpg";
 import runningDuck from "./media/running_duck.jpeg";
-
+import sadDuck from "./media/sad_duck.png";
 const ClickSound = () => {
   useEffect(() => {
     // Function to play the sound
@@ -46,7 +46,9 @@ const SearchPage = ({ onSearch }) => {
           setSearchResults(data);
           setTenSearchResult(data.slice(0, 10));
           setShouldUpdateResults(true);
+          setCurrentPage(1);
         } else {
+          setShouldUpdateResults(false);
           console.error("Error fetching search results:", response.statusText);
         }
       } catch (error) {
@@ -61,14 +63,17 @@ const SearchPage = ({ onSearch }) => {
   }, []);
 
   function ChangePage(value) {
+    if (value < 1) {
+      value = 1;
+    }
+    setCurrentPage(value);
     setLoading(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    setCurrentPage(value);
     const searchData = {
       NormalQuery: input,
-      docs: searchResults.slice(value * 10, value * 10 + 10),
+      docs: searchResults.slice((value - 1) * 10, value * 10),
     };
-
+  
     fetch("http://localhost:8090/api", {
       method: "POST",
       headers: {
@@ -78,10 +83,13 @@ const SearchPage = ({ onSearch }) => {
     })
       .then((response) => response.json())
       .then((data) => {
-        setTenSearchResult(data);
-        SearchResult.set(value,data);
-        console.log(SearchResult);
-        setShouldUpdateResults(true);
+        if (data.length === 0) {
+          setShouldUpdateResults(false);
+        } else {
+          setTenSearchResult(data);
+          SearchResult.set(value, data);
+          setShouldUpdateResults(true);
+        }
         setLoading(false);
       })
       .catch((error) => {
@@ -93,57 +101,84 @@ const SearchPage = ({ onSearch }) => {
 
   return (
     <>
-      <ClickSound />
-      <header className="search_header">
-        <div className="header-container">
-          <h1 className="header-title">Quack Quack Find</h1>
-          {!loading && (
+    <ClickSound />
+    <header className="search_header">
+      <div className="header-container">
+        <h1 className="header-title">Quack Quack Find</h1>
+        {!loading && (
+          <div className="image-container">
+            <img className="image" src={angryDuck} alt="Running Duck" />
+          </div>
+        )}
+        {loading ? (
+          <div className="loading-container">
             <div className="image-container">
-              <img className="image" src={angryDuck} alt="Running Duck" />
+              <img className="image" src={runningDuck} alt="Running Duck" />
             </div>
-          )}
-          {loading ? (
-            <div className="loading-container">
-              <div className="image-container">
-                <img className="image" src={runningDuck} alt="Running Duck" />
-              </div>
-              <h1>Loading...</h1>
-            </div>
-          ) : (
-            <div className="search-container">
-              <input
-                className="search-input"
-                type="text"
-                placeholder="Search..."
-                value={input}
-                onChange={(e) => setinput(e.target.value)}
-              />
-              <button className="search-button" onClick={handleSearch}>
-                Search
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-      {!loading && ( // Render search results only if not loading
-        <div className="search-results">
-          {shouldUpdateResults &&
-            tenSearchResult.map((doc, index) => (
-              <div className="search-result">
-                <Doc key={index} doc={doc} />
-              </div>
-            ))}
-        </div>
-      )}
-      <div className="page-numbers-container">
-        <button onClick={() => ChangePage(2)}>2</button>
-        <button onClick={() => ChangePage(3)}>3</button>
-        <button onClick={() => ChangePage(4)}>4</button>
-        <button onClick={() => ChangePage(5)}>5</button>
-        <button onClick={() => ChangePage(6)}>6</button>
-        <button onClick={() => ChangePage(7)}>7</button>
+            <h1>Loading...</h1>
+          </div>
+        ) : (
+          <div className="search-container">
+            <input
+              className="search-input"
+              type="text"
+              placeholder="Search..."
+              value={input}
+              onChange={(e) => setinput(e.target.value)}
+            />
+            <button className="search-button" onClick={handleSearch}>
+              Search
+            </button>
+          </div>
+        )}
       </div>
-    </>
+    </header>
+    {!loading && ( // Render search results only if not loading
+      <div className="search-results">
+        {shouldUpdateResults && tenSearchResult.length > 0 ? (
+          tenSearchResult.map((doc, index) => (
+            <div className="search-result" key={index}>
+              <Doc doc={doc} />
+            </div>
+          ))
+        ) : (
+          <div className="not-found-container">
+          <h1 className="not-found-message">No results found</h1>
+          <img className="image-notfound" src={sadDuck} alt="sadDuck" />
+          </div>
+          )
+        }
+      </div>
+    )}
+   {shouldUpdateResults && tenSearchResult.length > 0 && ( // Only render page numbers if there are search results
+  <div className="page-numbers-container">
+    <button onClick={() => ChangePage(currentPage - 1)}>prev</button>
+    {[1, 2, 3, 4, 5, 6, 7].map((pageNumber) => (
+      <button
+        key={pageNumber}
+        onClick={() => ChangePage(pageNumber)}
+        style={{
+          backgroundColor: currentPage === pageNumber ? "lightblue" : "#de5833",
+        }}
+      >
+        {pageNumber}
+      </button>
+    ))}
+    {currentPage > 7 && (
+      <>
+    
+        <button
+         style={{
+          backgroundColor: "lightblue"
+        }}
+         onClick={() => ChangePage(currentPage)}>{currentPage}</button>
+      </>
+    )}
+    <button onClick={() => ChangePage(currentPage + 1)}>next</button>
+  </div>
+)}
+  </>
+
   );
 };
 
