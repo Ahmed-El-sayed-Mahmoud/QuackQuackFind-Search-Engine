@@ -24,8 +24,9 @@ const ClickSound = () => {
 
   return null; // Since this component is only for side effects, return null
 };
-
+let SearchResult=new Map();
 const SearchPage = ({ onSearch }) => {
+ 
   const [searchResults, setSearchResults] = useState([]);
   const [input, setinput] = useState("");
   const [shouldUpdateResults, setShouldUpdateResults] = useState(false);
@@ -40,6 +41,8 @@ const SearchPage = ({ onSearch }) => {
         const response = await fetch(`http://localhost:8090/search/${input}`);
         if (response.ok) {
           const data = await response.json();
+          SearchResult.set(1,data.slice(0,10));
+          console.log(SearchResult);
           setSearchResults(data);
           setTenSearchResult(data.slice(0, 10));
           setShouldUpdateResults(true);
@@ -76,6 +79,8 @@ const SearchPage = ({ onSearch }) => {
       .then((response) => response.json())
       .then((data) => {
         setTenSearchResult(data);
+        SearchResult.set(value,data);
+        console.log(SearchResult);
         setShouldUpdateResults(true);
         setLoading(false);
       })
@@ -131,12 +136,12 @@ const SearchPage = ({ onSearch }) => {
         </div>
       )}
       <div className="page-numbers-container">
-        <button onClick={() => ChangePage(1)}>2</button>
-        <button onClick={() => ChangePage(2)}>3</button>
-        <button onClick={() => ChangePage(3)}>4</button>
-        <button onClick={() => ChangePage(4)}>5</button>
-        <button onClick={() => ChangePage(5)}>6</button>
-        <button onClick={() => ChangePage(6)}>7</button>
+        <button onClick={() => ChangePage(2)}>2</button>
+        <button onClick={() => ChangePage(3)}>3</button>
+        <button onClick={() => ChangePage(4)}>4</button>
+        <button onClick={() => ChangePage(5)}>5</button>
+        <button onClick={() => ChangePage(6)}>6</button>
+        <button onClick={() => ChangePage(7)}>7</button>
       </div>
     </>
   );
