@@ -14,10 +14,13 @@ public class GetUrlsThread  implements  Runnable
 {
     String word;
     List<JSONArray> jsonArrays;
-    public GetUrlsThread( String word ,  List<JSONArray> jsonArrays)
+    String [] Words;
+    public GetUrlsThread( String word ,  List<JSONArray> jsonArrays,String [] Words)
     {
         this.word = word;
         this.jsonArrays = jsonArrays;
+        this.Words = Words;
+
     }
     @Override
     public void run() {
@@ -28,6 +31,9 @@ public class GetUrlsThread  implements  Runnable
             synchronized (this.jsonArrays)
             {
                 this.jsonArrays.add(ResultJsonArr);
+                for(int i=0;i<Words.length;i++)
+                    if(Words[i].equals(word))
+                        Words[i]=Words[i]+"done";
             }
 
         } catch (JSONException e) {
@@ -52,24 +58,6 @@ public class GetUrlsThread  implements  Runnable
             return null;
 
         JSONArray UrlsArr= jsonObject.getJSONArray("URLS");
-
-//        for(int i=0;i<UrlsArr.length();i++)
-//        {
-//
-//            Object object =UrlsArr.getJSONObject(i);
-//            JSONObject jObject=(JSONObject) object;
-//            ResultDoc doc=new ResultDoc();
-//            doc.Url=jObject.getString("Url");
-//            if(UniqueResDocs.containsKey(doc.Url))
-//            {
-//                doc.WordsIncluded++;
-//            }
-//            doc.Title=jObject.getString("Title").toLowerCase();
-//            //doc.=Word;
-//            doc.rank=jObject.getInt("Rank");
-//            doc.Tf=jObject.getJSONObject("TF").getDouble("$numberDecimal");
-//            UniqueResDocs.put(doc.Url,doc);
-//        }
         return UrlsArr;
     }
 }

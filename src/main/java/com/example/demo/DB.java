@@ -39,7 +39,7 @@ public class DB {
     }
     public String Stemmping(String word) throws IOException {
 
-        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30, stopWords);
+        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
 
         TokenStream tokenStream = analyzer.tokenStream(null, new StringReader(word));
 

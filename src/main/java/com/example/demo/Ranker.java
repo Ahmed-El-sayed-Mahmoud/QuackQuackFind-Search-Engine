@@ -104,26 +104,13 @@ public class Ranker
                 .thenComparing(ResultDoc::CalcScores).thenComparing(ResultDoc::SecondScores).reversed();
 
 
+
        List<ResultDoc> SortedDocs= list.parallelStream()
                 .sorted(TFIDFComparator).limit(100)
                 .toList();
         return  SortedDocs;
     }
     public  List<ResultDoc>GetResult(String[] wordsArray,String NormalQuery,boolean PhraseSearch) throws JSONException, InterruptedException, IOException {
-//        Map<String,List<Doc>> list=new HashMap<>();
-//        //String[] wordsArray = Query.split("\\s+");
-//        for(String x : wordsArray)
-//        {
-//            List<Doc> WordUrls=GetUrls(x);
-//            if(WordUrls==null)
-//                continue;
-//            list.put(x,WordUrls);
-//        }
-//        Map<String,ResultDoc> UniqueResults= GetUniqueResultDocs(list,wordsArray);
-//        SetTfIdf(UniqueResults,list);
-//        List<ResultDoc> result=GetRankedDocsTfIdf(UniqueResults,wordsArray);
-//        return result;
-
             Map<String,ResultDoc> UniqueResults=new HashMap<>();
             Map<String,List<ResultDoc>> UrlsFromDB=new HashMap<>();
 
@@ -133,7 +120,7 @@ public class Ranker
             {
                 if(wordsArray[i]!="")
                 {
-                    threads[i] = new Thread(new GetUrlsThread(wordsArray[i], JSONArrayList));
+                    threads[i] = new Thread(new GetUrlsThread(wordsArray[i], JSONArrayList,wordsArray));
                     threads[i].start();
                 }
             }
@@ -142,7 +129,7 @@ public class Ranker
                 if(threads[i]!=null)
                     threads[i].join();
             }
-            if(JSONArrayList==null)
+            if(JSONArrayList.isEmpty())
                 return new ArrayList<ResultDoc>();
             List<ResultDoc> ResultDocs=new ArrayList<>();
             String CurrentWord;
@@ -192,9 +179,10 @@ public class Ranker
 
 //            int StartIndex=0;
 //            int LastIndex;
-//            if(FinalResultDocs.size()<THREADS_NUMS)
-//                THREADS_NUMS=FinalResultDocs.size();
+            if(FinalResultDocs.size()<THREADS_NUMS)
+                THREADS_NUMS=FinalResultDocs.size();
             Thread[] ResultThreads=new Thread[THREADS_NUMS];
+            int index=0;
             for (int i=0;i<ResultThreads.length;i++)
             {
 
@@ -212,9 +200,28 @@ public class Ranker
 
 //                if(StartIndex<=LastIndex&&LastIndex<=10)
 //                {
-                    ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs.subList(i,i+1),
-                            PhraseSearch,NormalQuery));
+                List<ResultDoc>FinalResultsWithDes=new ArrayList<ResultDoc>();
+                    if(PhraseSearch) {
+                        if (index + 2 <=FinalResultDocs.size())
+                        {
+                            ResultThreads[i] = new Thread(new ResultDocThread(FinalResultDocs,index, index + 2,
+                                    PhraseSearch, NormalQuery));
+                            index+=2;
+                        }
 
+                        else if(i+1<=FinalResultDocs.size())
+                        {
+
+                            ResultThreads[i] = new Thread(new ResultDocThread(FinalResultDocs,index,index+1,
+                                    PhraseSearch, NormalQuery));
+                            index+=1;
+                        }
+
+                    }
+                    else
+                        ResultThreads[i]=new Thread(new ResultDocThread(FinalResultDocs,i,i+1,
+                            PhraseSearch,NormalQuery));
+                    
                     ResultThreads[i].start();
                 //}
             }
@@ -223,8 +230,6 @@ public class Ranker
                     ResultThreads[i].join();
 
 
-
-            //FinalResultDocs=FinalResultDocs.stream().filter(t->t.Describtion!=null).toList();
 
         return FinalResultDocs;
     }
@@ -255,7 +260,7 @@ public class Ranker
 
             if(StartIndex<=LastIndex&&LastIndex<=docs.size())
             {
-                ResultThreads[i]=new Thread(new ResultDocThread(docs.subList(StartIndex,LastIndex),
+                ResultThreads[i]=new Thread(new ResultDocThread(docs,StartIndex,LastIndex+1,
                         PhraseSearch,NormalQuery));
 
                 ResultThreads[i].start();
@@ -267,6 +272,58 @@ public class Ranker
 
         return docs;
 
+    }
+    public List<ResultDoc> LogicalSearch(String []Queries,int operation) throws IOException, InterruptedException {
+        String[][]StemmedQuiries=new String[Queries.length][];
+        for(int i=0;i<Queries.length;i++)
+        {
+            Queries[i]=Queries[i].substring(1,Queries[i].length()-1).toLowerCase();
+            StemmedQuiries[i]=Queries[i].split("\\s+");
+            for(int j=0;j<StemmedQuiries[i].length;j++)
+            {
+                StemmedQuiries[i][j]= db.Stemmping(StemmedQuiries[i][j]);
+            }
+            List<String> list = new ArrayList<>(Arrays.asList(StemmedQuiries[i]));
+            list.removeIf(t -> t.equals(""));
+            StemmedQuiries[i] = list.toArray(new String[0]);
+        }
+       List<List<ResultDoc>> QuiriesResults=new ArrayList<List<ResultDoc>>();
+        Thread[] threads=new Thread[Queries.length];
+        for(int i=0;i<Queries.length;i++)
+        {
+            List<ResultDoc>Result=new ArrayList<ResultDoc>();
+            QuiriesResults.add(Result);
+            threads[i]=new Thread(new LogicalSearchThread(Queries[i],QuiriesResults.get(i),this,StemmedQuiries[i]));
+            threads[i].start();
+        }
+        for(int i=0;i<Queries.length;i++)
+            threads[i].join();
+
+
+        switch (operation) {
+            case 0:
+                for(int i=1;i<QuiriesResults.size();i++)
+                    if(QuiriesResults.get(0).retainAll(QuiriesResults.get(i).subList(0,10)))
+                        System.out.println("dfdfgglfkf");
+                break;
+            case 1:
+                for(int i=1;i<QuiriesResults.size();i++)
+                    QuiriesResults.get(0).addAll(QuiriesResults.get(i));
+                break;
+            case 2:
+                for(int i=1;i<QuiriesResults.size();i++)
+                    QuiriesResults.get(0).removeAll(QuiriesResults.get(i));
+                break;
+        }
+//        List<ResultDoc> linal=new ArrayList<ResultDoc>();
+//        for(int i=0;i<QuiriesResults.get(1).size();i++)
+//        {
+//
+//            if(QuiriesResults.get(0).contains(QuiriesResults.get(1).get(i)));
+//                linal.add(QuiriesResults.get(1).get(i));
+//        }
+//        return linal;
+      return  QuiriesResults.get(0);
     }
 
 }

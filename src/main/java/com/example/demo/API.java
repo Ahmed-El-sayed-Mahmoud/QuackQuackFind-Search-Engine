@@ -11,15 +11,30 @@ import java.util.List;
 @RestController
 
 public class API {
-    DB db;
-    Ranker ranker=new Ranker();
-    public API()
-    {
-        db= new DB(Crawler.stopedWord());
+    public API(){
+        int x=0;
     }
+    DB db=new DB(Crawler.stopedWord());
+    Ranker ranker=new Ranker();
+
     @GetMapping("search/{query}")
     public List<ResultDoc> greet(@PathVariable String query) throws JSONException, IOException, InterruptedException {
         boolean PhraseSearch=false;
+        boolean LogicalSearch=false;
+
+        if(query.contains("AND")||query.contains("OR")||query.contains("NOT"))
+        {
+
+            String[] Queries =query.split("\\s+(?i)(and|or|not)\\s+");
+            int Op=0;
+            if(query.contains("AND"))
+                Op=0;
+            else if(query.contains("OR"))
+                Op=1;
+            else
+                Op=2;
+            return ranker.LogicalSearch(Queries,Op);
+        }
         query=query.toLowerCase();
         if(query.charAt(0)=='"')
         {
@@ -35,7 +50,9 @@ public class API {
            StemmedQueryWords[i]=db.Stemmping(StemmedQueryWords[i]);
         }
         List<String> list = new ArrayList<>(Arrays.asList(StemmedQueryWords));
-        list.removeIf(t -> t.equals("")); // Use equals() to compare strings
+        list.removeIf(t -> t.equals(""));
+        String ll=db.RemoveStopWords(String.join(" ",list));
+        list=new ArrayList<>(Arrays.asList(ll.split("\\s+")));
         StemmedQueryWords = list.toArray(new String[0]);
         //String str=db.Stemmping(query);
         for(String s : StemmedQueryWords)

@@ -15,6 +15,7 @@ public class ResultDoc {
     public int WordsTitleIncluded = 0;
     public double QueryToTile;
     public String NormalTitle;
+    public boolean Show=true;
 
     @Override
     public int hashCode() {
