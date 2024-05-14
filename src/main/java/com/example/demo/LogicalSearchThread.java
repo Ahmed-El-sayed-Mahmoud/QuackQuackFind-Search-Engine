@@ -12,18 +12,18 @@ public class LogicalSearchThread implements Runnable
     List<ResultDoc> Result;
     Ranker ranker;
     String[]StemmedWords;
-    public LogicalSearchThread(String word, List<ResultDoc> result,Ranker ranker, String []StemmedWords)
+    public LogicalSearchThread(String word, List<ResultDoc> result, String []StemmedWords)
     {
         NormalQuery=word;
         Result=result;
         this.StemmedWords=StemmedWords;
         //ranker=new Ranker();
-        this.ranker=ranker;
+        this.ranker=new Ranker();
     }
     @Override
     public void run() {
         try {
-            Result.addAll( ranker.GetResult(StemmedWords,NormalQuery,true));
+            Result.addAll( ranker.GetResult(StemmedWords,NormalQuery,true,true));
 
         } catch (JSONException e) {
             throw new RuntimeException(e);

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./SearchPage.css";
 import Doc from "./Doc";
 import clickSound from "./media/quack.mp3";
-import angryDuck from "./media/angry_duck.jpg";
-import runningDuck from "./media/running_duck.jpeg";
+import angryDuck from "./media/file.png";
+import runningDuck from "./media/pato-duck.gif";
 import sadDuck from "./media/sad_duck.png"
 import {asInterruptible, InterruptError} from 'interruptible'
 const ClickSound = () => {
@@ -25,19 +25,36 @@ const ClickSound = () => {
 
   return null; // Since this component is only for side effects, return null
 };
+async function postData() {
+  const data = {
+    query: GlobalInput,
+  };
+  const response = await fetch("http://localhost:3000/api/insert/", {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data) // body data type must match "Content-Type" header
+  });
+  return response.json(); // parses JSON response into native JavaScript objects
+}
 let SearchResult=new Map();
 let GlobalInput;
 let GlobalSearchResultS=[];
 let u=0;
 let tenSearchResult=[];
 function  fetchData() {
+  //console.log(GlobalSearchResultS)
   for(let i=2;i<=((GlobalSearchResultS.length)/10);i++)
     {
+      if(GlobalSearchResultS.slice((i-1)*10, (i-1) * 10 + 10).length==0)
+        return;
       console.log((i-1)*10," ",(i-1) * 10 + 10);
         const searchData = {
           NormalQuery: GlobalInput,
           docs: GlobalSearchResultS.slice((i-1)*10, (i-1) * 10 + 10),
         };
+        console.log(searchData)
         fetch("http://localhost:8090/api", {
             method: "POST",
             headers: {
@@ -65,7 +82,28 @@ const SearchPage = ({ onSearch }) => {
   const [loading, setLoading] = useState(false);
   const [searchTime, setSearchTime] = useState(0);
   const [initialSearch, setinitialSearch] = useState(true);
+  const [recommendedResults, setRecommendedResults] = useState([]);
+  const [UpdateRecommend,setUpdateRecommend]=useState(false);
+  const handleInputChange = async (e) => {
+    const inputValue = e.target.value;
+    setinput(inputValue);
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/get/${inputValue}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecommendedResults(data);
+        console.log(recommendedResults);
+        setUpdateRecommend(true);
+      } else {
+        console.error('Error fetching recommendations:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    }
+  };
   const handleSearch = async () => {
+    SearchResult.clear();
     if (input.trim() !== "") {
       setLoading(true);
       const startTime = performance.now(); // Start timing the search operation
@@ -80,7 +118,7 @@ const SearchPage = ({ onSearch }) => {
             tenSearchResult=(data.slice(0, 20));
             SearchResult.set(1,data.slice(0,20));
             console.log(SearchResult);
-            u=0;
+            GlobalSearchResultS=data;
             console.log(tenSearchResult)
             setShouldUpdateResults(true);
             console.log(shouldUpdateResults)
@@ -108,12 +146,11 @@ const SearchPage = ({ onSearch }) => {
       setSearchTime(endTime - startTime); // Calculate and set the search time
       GlobalInput=input;
     }
+    console.log(GlobalInput)
     fetchData();
+    postData();
   };
 
-  useEffect(() => {
-    handleSearch(); // Trigger initial search
-  }, []);
 
   function ChangePage(value) {
     //setLoading(true);
@@ -158,6 +195,10 @@ const SearchPage = ({ onSearch }) => {
       }
     
   }
+  const handleResultClick = (result) => {
+    //setSelectedResult(result);
+    setinput(result["query"]);
+  };
 
   return (
     <>
@@ -184,11 +225,18 @@ const SearchPage = ({ onSearch }) => {
             type="text"
             placeholder="Search..."
             value={input}
-            onChange={(e) => setinput(e.target.value)}
+            onChange={handleInputChange}
           />
           <button className="search-button" onClick={handleSearch}>
             Search
           </button>
+          {recommendedResults.length > 0 && (
+        <ul>
+          {UpdateRecommend&&recommendedResults.map((result, index) => (
+            <li key={index} onClick={() => handleResultClick(result)}>{result["query"]}</li>
+          ))}
+        </ul>
+      )}
         </div>
       )}
     </div>
@@ -201,17 +249,7 @@ const SearchPage = ({ onSearch }) => {
       <div className="search-results">
         {shouldUpdateResults ? (
           tenSearchResult.length > 0 ? (
-            tenSearchResult.map((doc, index) => {
-              if (doc["Show"] && u < 10) {
-                u++;
-                return (
-                  <div className="search-result" key={index}>
-                    <Doc doc={doc} />
-                  </div>
-                );
-              }
-              return null;
-            })
+            tenSearchResult.map((doc, index) => (doc["Show"]&&(doc["Describtion"]!=null)&&<Doc key ={index}doc={doc}/>))
           ) : (
             <div className="not-found-container">
               <h1 className="not-found-message">No results found</h1>

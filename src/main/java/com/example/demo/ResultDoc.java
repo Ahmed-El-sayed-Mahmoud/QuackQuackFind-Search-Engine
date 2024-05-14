@@ -25,7 +25,10 @@ public class ResultDoc {
     public double GetTfIdf() {
         return TfIdf;
     }
-
+    public int logical()
+    {
+        return Describtion==null?0:1;
+    }
     public double CalcScores() {
         Score = 4 * WordsIncluded + 10 * WordsTitleIncluded;
         return Score;
@@ -55,8 +58,8 @@ public class ResultDoc {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        if (Url == ((ResultDoc) obj).Url)
-            return true;
+        if (Url.equals(((ResultDoc) obj).Url)) return true;
+
         else
             return false;
     }

@@ -3,6 +3,25 @@ body {
     font-family: 'Open Sans', sans-serif;
     overflow-y: auto; /* Allow vertical scrolling */
 }
+ul {
+    position: absolute;
+    top: 54%;
+    width: 385px;
+    left: 51%;
+    transform: translateX(-63%);
+    border-radius: 17px;
+    background-color: #d9d6d6;
+  }
+  
+  ul li {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  ul li:hover {
+    background-color: #f0f0f0;
+  }
 .header-title{
     text-align: center;
     font-size: 30px;
@@ -15,6 +34,7 @@ body {
     align-items: center;
     height: 10vh;
     padding: 20px;
+    position: relative;
 }
 
 .search-input {
@@ -86,8 +106,8 @@ body {
   top: 20%; /* Position at 50% from the top */
   left: 50%; /* Position at 50% from the left */
   transform: translate(-50%, -50%); /* Center the image */
-  width: 150px; /* Adjust as needed */
-  height: 150px; /* Adjust as needed */
+  width: 400px; /* Adjust as needed */
+
   border-radius: 50%; /* Make the image circular */
 }
 
@@ -131,3 +151,20 @@ body {
    
 }
 
+a{
+    text-decoration: none;
+    color: #4c5474;
+}
+h3{
+    font-size: 26px;
+    padding: 0;
+    margin-bottom: 9px;
+}
+.lolo {
+    padding-left: 10px;
+    font-size: 18px;
+}
+.doc-container{
+    border-bottom: 1px #b4afaf solid;
+    padding-bottom: 23px;
+}

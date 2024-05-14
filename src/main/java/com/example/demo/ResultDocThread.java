@@ -11,10 +11,7 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import org.apache.commons.text.WordUtils;
@@ -34,6 +31,7 @@ public class ResultDocThread implements Runnable {
     String NormalQuery;
     int Start;
     int Last;
+    Set<String> StopWords;
 
     //    public ResultDocThread(Map<String,ResultDoc> UniqueResultDocs, List<JSONObject> jsonObjects, Map<String,List<ResultDoc>> UrlsFromDB,
 //                           String [] Query,String NormalQuery,boolean PhraseSearch)
@@ -53,6 +51,7 @@ public class ResultDocThread implements Runnable {
         this.NormalQuery = NormalQuery;
         this.Start = start;
         this.Last = last;
+        StopWords=Crawler.stopedWord();
     }
 
     @Override
@@ -151,11 +150,11 @@ public class ResultDocThread implements Runnable {
         } else if (!PhraseSearch) {
             String[] QueryWords = NormalQuery.split(" ");
             for (int i = 0; i < QueryWords.length; i++) {
-                if (text.contains(QueryWords[i])) {
+                if (!StopWords.contains(QueryWords[i])&&text.contains(QueryWords[i])) {
                     String highlightedText = text.replaceAll("(?i)(" + QueryWords[i] + ")", "<strong>$1</strong>");
                     return highlightedText;
                 }
-                else if(QueryWords[i].endsWith("s")&&text.contains(QueryWords[i].substring(0,QueryWords[i].length()-1)))
+                else if(!StopWords.contains(QueryWords[i])&&QueryWords[i].endsWith("s")&&text.contains(QueryWords[i].substring(0,QueryWords[i].length()-1)))
                 {
                     String highlightedText = text.replaceAll("(?i)(" + QueryWords[i].substring(0,QueryWords[i].length()-1) + ")", "<strong>$1</strong>");
                     return highlightedText;

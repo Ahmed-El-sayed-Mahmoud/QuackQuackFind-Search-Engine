@@ -92,7 +92,7 @@ public class Ranker
 
     }
 
-    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs,boolean PhraseSearch,int WordsNum) throws InterruptedException
+    public List<ResultDoc>GetRankedDocsTfIdf(Map<String,ResultDoc> UniqueResDocs,boolean PhraseSearch,int WordsNum,boolean logical) throws InterruptedException
     {
         List<ResultDoc> list =new ArrayList<>( UniqueResDocs.values());
         if(PhraseSearch)
@@ -103,14 +103,17 @@ public class Ranker
                 .thenComparing(ResultDoc::WordsTitleTFIDF)
                 .thenComparing(ResultDoc::CalcScores).thenComparing(ResultDoc::SecondScores).reversed();
 
-
-
-       List<ResultDoc> SortedDocs= list.parallelStream()
+        List<ResultDoc> SortedDocs;
+        if(!logical)
+       SortedDocs= list.parallelStream()
                 .sorted(TFIDFComparator).limit(100)
+                .toList();
+        else SortedDocs= list.parallelStream()
+                .sorted(TFIDFComparator)
                 .toList();
         return  SortedDocs;
     }
-    public  List<ResultDoc>GetResult(String[] wordsArray,String NormalQuery,boolean PhraseSearch) throws JSONException, InterruptedException, IOException {
+    public  List<ResultDoc>GetResult(String[] wordsArray,String NormalQuery,boolean PhraseSearch,boolean logical) throws JSONException, InterruptedException, IOException {
             Map<String,ResultDoc> UniqueResults=new HashMap<>();
             Map<String,List<ResultDoc>> UrlsFromDB=new HashMap<>();
 
@@ -174,7 +177,7 @@ public class Ranker
             }
 
             SetTfIdf(UniqueResults,UrlsFromDB);
-            List<ResultDoc> FinalResultDocs=GetRankedDocsTfIdf(UniqueResults,PhraseSearch,wordsArray.length);
+            List<ResultDoc> FinalResultDocs=GetRankedDocsTfIdf(UniqueResults,PhraseSearch,wordsArray.length,logical);
 
 
 //            int StartIndex=0;
@@ -293,28 +296,33 @@ public class Ranker
         {
             List<ResultDoc>Result=new ArrayList<ResultDoc>();
             QuiriesResults.add(Result);
-            threads[i]=new Thread(new LogicalSearchThread(Queries[i],QuiriesResults.get(i),this,StemmedQuiries[i]));
+            threads[i]=new Thread(new LogicalSearchThread(Queries[i],QuiriesResults.get(i),StemmedQuiries[i]));
             threads[i].start();
         }
         for(int i=0;i<Queries.length;i++)
             threads[i].join();
 
-
+        List<ResultDoc> mainList = QuiriesResults.get(0);
         switch (operation) {
             case 0:
                 for(int i=1;i<QuiriesResults.size();i++)
-                    if(QuiriesResults.get(0).retainAll(QuiriesResults.get(i).subList(0,10)))
-                        System.out.println("dfdfgglfkf");
+                    mainList.retainAll(QuiriesResults.get(i));
+
                 break;
             case 1:
                 for(int i=1;i<QuiriesResults.size();i++)
-                    QuiriesResults.get(0).addAll(QuiriesResults.get(i));
+                    mainList.addAll(QuiriesResults.get(i));
+
                 break;
             case 2:
                 for(int i=1;i<QuiriesResults.size();i++)
-                    QuiriesResults.get(0).removeAll(QuiriesResults.get(i));
+                    mainList.removeAll(QuiriesResults.get(i));
+
                 break;
         }
+        HashSet<ResultDoc> setWithoutDuplicates = new HashSet<>(mainList);
+        List<ResultDoc> listWithoutDuplicates = new ArrayList<>(setWithoutDuplicates);
+       SortLogical(mainList);
 //        List<ResultDoc> linal=new ArrayList<ResultDoc>();
 //        for(int i=0;i<QuiriesResults.get(1).size();i++)
 //        {
@@ -323,7 +331,15 @@ public class Ranker
 //                linal.add(QuiriesResults.get(1).get(i));
 //        }
 //        return linal;
-      return  QuiriesResults.get(0);
+      return  mainList;
+    }
+    public List<ResultDoc> SortLogical(List<ResultDoc> Docs)
+    {
+        Comparator<ResultDoc> Comparator = java.util.Comparator.comparing(ResultDoc::logical)
+                .reversed();
+        return Docs.parallelStream()
+                .sorted(Comparator)
+                .toList();
     }
 
 }

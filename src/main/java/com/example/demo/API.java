@@ -58,7 +58,7 @@ public class API {
         for(String s : StemmedQueryWords)
             System.out.println(s);
 
-        return  ranker.GetResult(StemmedQueryWords,NormalQuery,PhraseSearch);
+        return  ranker.GetResult(StemmedQueryWords,NormalQuery,PhraseSearch,false);
     }
 
     @PostMapping("api")
