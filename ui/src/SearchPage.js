@@ -5,7 +5,6 @@ import clickSound from "./media/quack.mp3";
 import angryDuck from "./media/angry_duck.jpg";
 import runningDuck from "./media/running_duck.jpeg";
 import sadDuck from "./media/sad_duck.png";
-import { set } from "mongoose";
 const ClickSound = () => {
   useEffect(() => {
     // Function to play the sound
